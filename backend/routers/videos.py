@@ -1,4 +1,3 @@
-# backend/routers/videos.py
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
@@ -282,6 +281,25 @@ async def generate_captions(
         print('applying styles')
         result = await apply_styles(transcript_json, request.style_config.get('id', 'default'))
 
+        # Create style with result saved to the appropriate attribute
+        style_id = request.style_config.get('id', 'default')
+        print(f"\n[STYLE] Creating style '{style_id}' with result")
+        
+        # Prepare style data with result in the correct attribute
+        style_data = {
+            "name": style_id,
+            "description": f"Generated captions for video {request.video_id}",
+            style_id: result  # Dynamically set the attribute (e.g., matt: result)
+        }
+        
+        new_style = schemas.StyleCreate(**style_data)
+        style = crud.create_style(db, new_style, creator_id=current_user.id)
+        print(f"[STYLE] Created style with id: {style.id}")
+        
+        # Update video with the new style_id
+        video_style_update = schemas.VideoUpdate(style_id=style.id)
+        crud.update_video(db, int(request.video_id), video_style_update)
+        print(f"[STYLE] Updated video {request.video_id} with style_id: {style.id}")
         
         return {
             "success": True,
@@ -289,11 +307,20 @@ async def generate_captions(
             "status": "ready",
             "low_res_url": low_res_url,
             "result": result,
+            "style_id": style.id,
+            "style_name": style_id,
             "transcript_preview": str(transcript)[:200] + "..." if len(str(transcript)) > 200 else transcript
         }
         
     except Exception as e:
         print(f"\n[ERROR] Pipeline failed: {str(e)}")
+        # Add this to print full traceback
+        import traceback
+        print("\n" + "="*60)
+        print("FULL TRACEBACK:")
+        print("="*60)
+        traceback.print_exc()
+        print("="*60 + "\n")
         
         # Update status to error
         try:
@@ -303,6 +330,3 @@ async def generate_captions(
             pass
         
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
-
-
-# 

@@ -15,40 +15,43 @@ class UserCreate(UserBase):
 
 
 # ============== Style Schemas ==============
-
 class StyleBase(BaseModel):
     name: str
     description: Optional[str] = None
 
 class StyleCreate(StyleBase):
-    three_lines: Optional[Dict[str, Any]] = {}
-    two_lines: Optional[Dict[str, Any]] = {}
-    one_line: Optional[Dict[str, Any]] = {}
-    spotlight: Optional[Dict[str, Any]] = {}
-    split_screen: Optional[Dict[str, Any]] = {}
-    minimal: Optional[Dict[str, Any]] = {}
-    dynamic: Optional[Dict[str, Any]] = {}
+     
+    matt: Optional[List[Any]] = []
+    three_lines: Optional[List[Any]] = []
+    two_lines: Optional[List[Any]] = []
+    one_line: Optional[List[Any]] = []
+    spotlight: Optional[List[Any]] = []
+    split_screen: Optional[List[Any]] = []
+    minimal: Optional[List[Any]] = []
+    dynamic: Optional[List[Any]] = []
 
 class StyleUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    three_lines: Optional[Dict[str, Any]] = None
-    two_lines: Optional[Dict[str, Any]] = None
-    one_line: Optional[Dict[str, Any]] = None
-    spotlight: Optional[Dict[str, Any]] = None
-    split_screen: Optional[Dict[str, Any]] = None
-    minimal: Optional[Dict[str, Any]] = None
-    dynamic: Optional[Dict[str, Any]] = None
+    matt: Optional[List[Any]] = None
+    three_lines: Optional[List[Any]] = None
+    two_lines: Optional[List[Any]] = None
+    one_line: Optional[List[Any]] = None
+    spotlight: Optional[List[Any]] = None
+    split_screen: Optional[List[Any]] = None
+    minimal: Optional[List[Any]] = None
+    dynamic: Optional[List[Any]] = None
 
 class StyleResponse(StyleBase):
     id: int
-    three_lines: Dict[str, Any]
-    two_lines: Dict[str, Any]
-    one_line: Dict[str, Any]
-    spotlight: Dict[str, Any]
-    split_screen: Dict[str, Any]
-    minimal: Dict[str, Any]
-    dynamic: Dict[str, Any]
+    matt: List[Any]
+    three_lines: List[Any]
+    two_lines: List[Any]
+    one_line: List[Any]
+    spotlight: List[Any]
+    split_screen: List[Any]
+    minimal: List[Any]
+    dynamic: List[Any]
     is_default: int
     created_at: datetime
     
@@ -90,7 +93,7 @@ class VideoUploadResponse(BaseModel):
 class VideoResponse(BaseModel):
     id: int
     name: Optional[str]
-    transcript: Optional[str]
+    transcript: Optional[Dict[str, Any]]
     original_url: Optional[str]
     low_res_url: Optional[str]
     high_res_url: Optional[str]
@@ -103,7 +106,7 @@ class VideoResponse(BaseModel):
     style_id: Optional[int]
     owner_id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None  # Made optional
     
     class Config:
         from_attributes = True
@@ -169,3 +172,6 @@ class GenerateCaptionsRequest(BaseModel):
     video_url: str
     style_config: Dict[str, Any]  # Flexible to accept any style config structure
     video_filename: str
+
+
+

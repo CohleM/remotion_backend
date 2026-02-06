@@ -104,6 +104,7 @@ def create_style(db: Session, style: schemas.StyleCreate, creator_id: Optional[i
     db_style = models.Style(
         name=style.name,
         description=style.description,
+        matt=style.matt,
         three_lines=style.three_lines,
         two_lines=style.two_lines,
         one_line=style.one_line,

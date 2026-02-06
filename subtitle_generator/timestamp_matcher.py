@@ -68,7 +68,7 @@ class TimestampMatcher:
         
         for i in range(len(transcript_words) - len(normalized_line_words) + 1):
             if transcript_words[i:i+len(normalized_line_words)] == normalized_line_words:
-                match_start = word_timestamps[i].start
+                match_start = word_timestamps[i].start # error here, check properly
                 match_end = word_timestamps[i + len(normalized_line_words) - 1].end
                 
                 # Ensure match falls within parent group's time range

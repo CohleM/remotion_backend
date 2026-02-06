@@ -1,8 +1,8 @@
-"""initial alembic commit
+"""Initial migration
 
-Revision ID: 8fa758245704
+Revision ID: 7e41ef9afd84
 Revises: 
-Create Date: 2026-02-05 12:38:53.288298
+Create Date: 2026-02-06 12:10:56.834619
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8fa758245704'
+revision: str = '7e41ef9afd84'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,6 +40,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
+    sa.Column('matt', sa.JSON(), nullable=True),
     sa.Column('three_lines', sa.JSON(), nullable=True),
     sa.Column('two_lines', sa.JSON(), nullable=True),
     sa.Column('one_line', sa.JSON(), nullable=True),
@@ -58,7 +59,7 @@ def upgrade() -> None:
     op.create_table('videos',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
-    sa.Column('transcript', sa.Text(), nullable=True),
+    sa.Column('transcript', sa.JSON(), nullable=True),
     sa.Column('original_url', sa.String(), nullable=True),
     sa.Column('low_res_url', sa.String(), nullable=True),
     sa.Column('high_res_url', sa.String(), nullable=True),

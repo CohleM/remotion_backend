@@ -77,13 +77,14 @@ class Style(Base):
     description = Column(String, nullable=True)
     
     # Different style configurations as JSON
-    three_lines = Column(JSON, default=dict)      # Three line layout config
-    two_lines = Column(JSON, default=dict)        # Two line layout config
-    one_line = Column(JSON, default=dict)         # Single line layout config
-    spotlight = Column(JSON, default=dict)        # Spotlight style config
-    split_screen = Column(JSON, default=dict)     # Split screen config
-    minimal = Column(JSON, default=dict)          # Minimal style config
-    dynamic = Column(JSON, default=dict)          # Dynamic animated config
+    matt = Column(JSON, default=list)      # Three line layout config
+    three_lines = Column(JSON, default=list)      # Three line layout config
+    two_lines = Column(JSON, default=list)        # Two line layout config
+    one_line = Column(JSON, default=list)         # Single line layout config
+    spotlight = Column(JSON, default=list)        # Spotlight style config
+    split_screen = Column(JSON, default=list)     # Split screen config
+    minimal = Column(JSON, default=list)          # Minimal style config
+    dynamic = Column(JSON, default=list)          # Dynamic animated config
     
     # User who created this style (optional, for user-specific styles)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
