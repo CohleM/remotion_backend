@@ -104,14 +104,7 @@ def create_style(db: Session, style: schemas.StyleCreate, creator_id: Optional[i
     db_style = models.Style(
         name=style.name,
         description=style.description,
-        matt=style.matt,
-        three_lines=style.three_lines,
-        two_lines=style.two_lines,
-        one_line=style.one_line,
-        spotlight=style.spotlight,
-        split_screen=style.split_screen,
-        minimal=style.minimal,
-        dynamic=style.dynamic,
+        styled_transcript=style.styled_transcript,
         creator_id=creator_id,
         is_default=0 if creator_id else 1
     )

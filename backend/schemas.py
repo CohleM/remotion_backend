@@ -89,6 +89,7 @@ class VideoResponse(BaseModel):
     width: Optional[float]
     height: Optional[float]
     fps: Optional[float]
+    all_styles_mapping: Optional[Dict]
 
     current_style: Dict[str, Any]
     status: str
