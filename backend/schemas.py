@@ -20,38 +20,17 @@ class StyleBase(BaseModel):
     description: Optional[str] = None
 
 class StyleCreate(StyleBase):
-     
-    matt: Optional[List[Any]] = []
-    three_lines: Optional[List[Any]] = []
-    two_lines: Optional[List[Any]] = []
-    one_line: Optional[List[Any]] = []
-    spotlight: Optional[List[Any]] = []
-    split_screen: Optional[List[Any]] = []
-    minimal: Optional[List[Any]] = []
-    dynamic: Optional[List[Any]] = []
+    styled_transcript: Optional[List[Any]] = []
 
 class StyleUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    matt: Optional[List[Any]] = None
-    three_lines: Optional[List[Any]] = None
-    two_lines: Optional[List[Any]] = None
-    one_line: Optional[List[Any]] = None
-    spotlight: Optional[List[Any]] = None
-    split_screen: Optional[List[Any]] = None
-    minimal: Optional[List[Any]] = None
-    dynamic: Optional[List[Any]] = None
+    styled_transcript: Optional[List[Any]] = None
+
 
 class StyleResponse(StyleBase):
     id: int
-    matt: List[Any]
-    three_lines: List[Any]
-    two_lines: List[Any]
-    one_line: List[Any]
-    spotlight: List[Any]
-    split_screen: List[Any]
-    minimal: List[Any]
-    dynamic: List[Any]
+    styled_transcript : Optional[List[Any]] = None
     is_default: int
     created_at: datetime
     
@@ -77,6 +56,12 @@ class VideoUpdate(BaseModel):
     style_id: Optional[int] = None
     status: Optional[str] = None  # Add status field
 
+    all_styles_mapping : Dict = None
+    # Video info
+    width: Optional[float] = None
+    height: Optional[float] = None
+    fps: Optional[float] = None
+    duration: Optional[float] = None
 
 class VideoCreate(BaseModel):
     name: Optional[str] = None
@@ -100,7 +85,11 @@ class VideoResponse(BaseModel):
     original_filename: Optional[str]
     content_type: Optional[str]
     file_size: Optional[int]
-    duration: Optional[int]
+    duration: Optional[float]
+    width: Optional[float]
+    height: Optional[float]
+    fps: Optional[float]
+
     current_style: Dict[str, Any]
     status: str
     style_id: Optional[int]

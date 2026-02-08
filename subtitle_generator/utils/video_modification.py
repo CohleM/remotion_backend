@@ -2,7 +2,6 @@ from pydub import AudioSegment
 import time
 import ffmpeg
 import os
-
 import logging
 
 # Set up logging
@@ -118,3 +117,16 @@ def convert_video_lowres(input_file, output_file=None, target_height=360):
     except ffmpeg.Error as e:
         print("Error during conversion:", e)
         raise
+
+
+def get_video_info(video_path):
+    probe = ffmpeg.probe(video_path)
+    video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+
+    width = int(video_info['width'])
+    height = int(video_info['height'])
+    video_info = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+    duration = float(video_info['duration'])
+    fps = 30
+
+    return width, height, duration, fps

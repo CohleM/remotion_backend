@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from backend.database import Base
@@ -46,10 +46,16 @@ class Video(Base):
     original_filename = Column(String, nullable=True)
     content_type = Column(String, nullable=True)  # video/mp4, audio/mp3, etc.
     file_size = Column(Integer, nullable=True)    # in bytes
-    duration = Column(Integer, nullable=True)     # seconds
+
+    # video info
+    width = Column(Float, nullable=True)
+    height = Column(Float, nullable=True)
+    fps = Column(Float, nullable=True)
+    duration = Column(Float, nullable=True)     # seconds
     
     # Current active style configuration (JSON)
     current_style = Column(JSON, default=dict)
+    all_styles_mapping = Column(JSON, default=dict)
     
     # Foreign keys
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -77,15 +83,8 @@ class Style(Base):
     description = Column(String, nullable=True)
     
     # Different style configurations as JSON
-    matt = Column(JSON, default=list)      # Three line layout config
-    three_lines = Column(JSON, default=list)      # Three line layout config
-    two_lines = Column(JSON, default=list)        # Two line layout config
-    one_line = Column(JSON, default=list)         # Single line layout config
-    spotlight = Column(JSON, default=list)        # Spotlight style config
-    split_screen = Column(JSON, default=list)     # Split screen config
-    minimal = Column(JSON, default=list)          # Minimal style config
-    dynamic = Column(JSON, default=list)          # Dynamic animated config
-    
+    styled_transcript = Column(JSON, default=list)      # Three line layout config
+   
     # User who created this style (optional, for user-specific styles)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     

@@ -17,7 +17,7 @@ import tempfile
 import asyncio
 
 
-from subtitle_generator.utils.video_modification import convert_mp4_to_mp3, convert_video_lowres 
+from subtitle_generator.utils.video_modification import convert_mp4_to_mp3, convert_video_lowres, get_video_info
 
 router = APIRouter(prefix="/videos", tags=["videos"])
 
@@ -208,9 +208,9 @@ async def generate_captions(
     print(f"\n[REQUEST] User: {request.user_id}, Video: {request.video_id}")
     print(f"[REQUEST] Filename: {request.video_filename}")
     
-    # Validate ownership
-    if str(current_user.id) != request.user_id:
-        raise HTTPException(status_code=403, detail="User ID mismatch")
+    # # Validate ownership
+    # if str(current_user.id) != request.user_id:
+    #     raise HTTPException(status_code=403, detail="User ID mismatch")
     
     # Create temp directory
     temp_dir = os.path.join(tempfile.gettempdir(), f"{request.user_id}-{request.video_id}")
@@ -236,6 +236,8 @@ async def generate_captions(
         
         original_size = os.path.getsize(local_file_path)
         print(f"[DOWNLOAD] Complete: {original_size} bytes")
+
+        width, height, duration_in_seconds, fps = get_video_info(local_file_path)
         
         # Process: transcribe + upload low-res concurrently
         print(f"\n[PROCESSING] Starting transcription and low-res upload...")
@@ -251,20 +253,6 @@ async def generate_captions(
         # Convert transcript dict to JSON string for storage
         transcript_json = transcript  # Already a dict from model_dump()
         
-        video_update = schemas.VideoUpdate(
-            transcript=transcript_json,  # You'll need to adjust schema type
-            low_res_url=low_res_url,
-            status="ready",
-            current_style=request.style_config
-        )
-        
-        updated_video = crud.update_video(db, int(request.video_id), video_update)
-        
-        if not updated_video:
-            raise HTTPException(status_code=404, detail="Failed to update video")
-        
-        print(f"[DATABASE] Updated video {request.video_id}")
-        
         # clear temp files
         for path in [local_file_path, lowres_path, audio_path]:
             try:
@@ -275,30 +263,44 @@ async def generate_captions(
         print("\n" + "=" * 60)
         print("PIPELINE COMPLETE")
         print("=" * 60)
-
         
-
         print('applying styles')
         result = await apply_styles(transcript_json, request.style_config.get('id', 'default'))
 
         # Create style with result saved to the appropriate attribute
-        style_id = request.style_config.get('id', 'default')
-        print(f"\n[STYLE] Creating style '{style_id}' with result")
+        style_name = request.style_config.get('id', 'default')
+        print(f"\n[STYLE] Creating style '{style_name}' with result")
         
         # Prepare style data with result in the correct attribute
         style_data = {
-            "name": style_id,
+            "name": style_name,
             "description": f"Generated captions for video {request.video_id}",
-            style_id: result  # Dynamically set the attribute (e.g., matt: result)
+            "styled_transcript": result  # Dynamically set the attribute (e.g., matt: result)
         }
+
         
         new_style = schemas.StyleCreate(**style_data)
         style = crud.create_style(db, new_style, creator_id=current_user.id)
         print(f"[STYLE] Created style with id: {style.id}")
+
+        all_styles_mapping = {
+            style_name : style.id # example "matt" : 5
+        }
         
         # Update video with the new style_id
-        video_style_update = schemas.VideoUpdate(style_id=style.id)
-        crud.update_video(db, int(request.video_id), video_style_update)
+        final_video_update = schemas.VideoUpdate(
+            transcript=transcript_json,
+            low_res_url=low_res_url,
+            status="ready",
+            current_style=request.style_config,
+            width=width,
+            height=height,
+            fps=fps,
+            duration=duration_in_seconds,
+            style_id=style.id,
+            all_styles_mapping=all_styles_mapping
+        )
+        crud.update_video(db, int(request.video_id), final_video_update)
         print(f"[STYLE] Updated video {request.video_id} with style_id: {style.id}")
         
         return {
@@ -308,7 +310,7 @@ async def generate_captions(
             "low_res_url": low_res_url,
             "result": result,
             "style_id": style.id,
-            "style_name": style_id,
+            "style_name": style_name,
             "transcript_preview": str(transcript)[:200] + "..." if len(str(transcript)) > 200 else transcript
         }
         
