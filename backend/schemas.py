@@ -163,5 +163,7 @@ class GenerateCaptionsRequest(BaseModel):
     style_config: Dict[str, Any]  # Flexible to accept any style config structure
     video_filename: str
 
-
+class ChangeStyleRequest(BaseModel):
+    video_id: str
+    style_config: Dict[str, Any]
 

@@ -113,7 +113,7 @@ Output JSON matching the SubtitleTimeline schema.
     def get_config(cls, style: str) -> GenerationConfig:
         """Get configuration by style name."""
         configs = {
-            "two_line": GenerationConfig(
+            "basic": GenerationConfig(
                 name="two_line",
                 system_prompt=cls.TWO_LINE,
                 max_words_special=5,

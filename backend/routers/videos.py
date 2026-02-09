@@ -332,3 +332,133 @@ async def generate_captions(
             pass
         
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+
+
+
+
+
+@router.post("/change_styles")
+async def change_styles(
+    request: schemas.ChangeStyleRequest,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    """
+    Change or generate new styles for an existing video.
+    If style exists in all_styles_mapping, switch to it.
+    If not, generate new style, save it, and switch to it.
+    """
+    
+    print("=" * 60)
+    print("STARTING STYLE CHANGE PIPELINE")
+    print("=" * 60)
+    
+    print(f"\n[REQUEST] User: {current_user.id}, Video: {request.video_id}")
+    print(f"[REQUEST] Style Config ID: {request.style_config.get('id', 'default')}")
+    
+    # Get video from database
+    video = crud.get_video(db, int(request.video_id))
+    if not video or video.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # Check if video has transcript
+    if not video.transcript:
+        raise HTTPException(status_code=400, detail="Video has no transcript. Generate captions first.")
+    
+    style_id = request.style_config.get('id', 'default')
+    
+    # Check if style already exists in all_styles_mapping
+    existing_styles = video.all_styles_mapping or {}
+    
+    if style_id in existing_styles:
+        # Style exists - just switch to it
+        print(f"\n[STYLE EXISTS] Switching to existing style '{style_id}' (ID: {existing_styles[style_id]})")
+        
+        # Update video to use this style
+        video_update = schemas.VideoUpdate(
+            current_style=request.style_config,
+            style_id=existing_styles[style_id]
+        )
+        updated_video = crud.update_video(db, int(request.video_id), video_update)
+        
+        # Get the style result for response
+        style = crud.get_style(db, existing_styles[style_id])
+        
+        print(f"[SUCCESS] Switched to existing style '{style_id}'")
+        
+        return {
+            "success": True,
+            "video_id": request.video_id,
+            "style_id": existing_styles[style_id],
+            "style_name": style_id,
+            "current_style": request.style_config,
+            "result": style.styled_transcript if style else None,
+            "message": f"Switched to existing style '{style_id}'",
+            "is_new_style": False
+        }
+    
+    else:
+        # Style doesn't exist - generate it
+        print(f"\n[NEW STYLE] Generating new style '{style_id}'...")
+        
+        try:
+            # Get transcript from video (already a dict/JSON)
+            transcript_json = video.transcript
+            if isinstance(transcript_json, str):
+                import json
+                transcript_json = json.loads(transcript_json)
+            
+            # Generate new style
+            print(f"[GENERATING] Applying style '{style_id}' to transcript...")
+            result = await apply_styles(transcript_json, style_id)
+            print(f"[GENERATED] Style result: {len(str(result))} chars")
+            
+            # Create new style in database
+            style_data = {
+                "name": style_id,
+                "description": f"Generated captions for video {request.video_id}",
+                "styled_transcript": result
+            }
+            
+            new_style = schemas.StyleCreate(**style_data)
+            style = crud.create_style(db, new_style, creator_id=current_user.id)
+            print(f"[DATABASE] Created new style with id: {style.id}")
+            
+            # Update all_styles_mapping with new style
+            updated_styles_mapping = {**existing_styles, style_id: style.id}
+            
+            # Update video with new style
+            video_update = schemas.VideoUpdate(
+                current_style=request.style_config,
+                style_id=style.id,
+                all_styles_mapping=updated_styles_mapping
+            )
+            updated_video = crud.update_video(db, int(request.video_id), video_update)
+            print(f"[DATABASE] Updated video with new style mapping")
+            
+            print("\n" + "=" * 60)
+            print("STYLE CHANGE COMPLETE - NEW STYLE CREATED")
+            print("=" * 60)
+            
+            return {
+                "success": True,
+                "video_id": request.video_id,
+                "style_id": style.id,
+                "style_name": style_id,
+                "current_style": request.style_config,
+                "result": result,
+                "message": f"Generated and switched to new style '{style_id}'",
+                "is_new_style": True,
+                "all_styles": list(updated_styles_mapping.keys())
+            }
+            
+        except Exception as e:
+            print(f"\n[ERROR] Style generation failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Style generation failed: {str(e)}"
+            )
