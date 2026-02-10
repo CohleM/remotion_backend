@@ -480,7 +480,6 @@ def create_render_job(
     video = crud.get_video(db, video_id)
     style = crud.get_style(db, video.style_id)
 
-    print('video and style', video, style)
     job = RenderJob(
         id=uuid.uuid4(),
         user_id=current_user.id,
@@ -502,6 +501,12 @@ def create_render_job(
     db.add(job)
     db.commit()
 
+    # ✅ Save job id to video
+    video_update = schemas.VideoUpdate(
+        render_job_id=str(job.id)
+    )
+    crud.update_video(db, video_id, video_update)
+
     return {"jobId": str(job.id)}
 
 
@@ -512,9 +517,18 @@ def get_render_status(job_id: str, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(404)
 
+    signed_url = None
+
+    if job.status == "completed" and job.output_url:
+        signed_url = s3_client.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': settings.R2_BUCKET_NAME, 'Key': job.output_url},
+                        ExpiresIn=1*3600
+                    )
+
     return {
         "status": job.status,
         "progress": job.progress,
-        "videoUrl": job.output_url
+        "videoUrl": signed_url or ""
     }
 

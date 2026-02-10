@@ -2,7 +2,7 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-
+from uuid import UUID
 # ============== User Schemas ==============
 
 class UserBase(BaseModel):
@@ -63,6 +63,8 @@ class VideoUpdate(BaseModel):
     fps: Optional[float] = None
     duration: Optional[float] = None
 
+    render_job_id: Optional[UUID] = None  # ✅ Changed from str to UUID
+
 class VideoCreate(BaseModel):
     name: Optional[str] = None
     # No longer need to pass URLs - they come from upload
@@ -97,7 +99,9 @@ class VideoResponse(BaseModel):
     owner_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None  # Made optional
-    
+
+    render_job_id: Optional[UUID] = None  # ✅ Changed from str to UUID
+
     class Config:
         from_attributes = True
 

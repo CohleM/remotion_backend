@@ -75,6 +75,9 @@ class Video(Base):
     # Relationships
     owner = relationship("User", back_populates="videos")
     style = relationship("Style", back_populates="videos")
+
+    # render job id
+    render_job_id = Column(UUID(as_uuid=True), nullable=True)
     
     def __repr__(self):
         return f"<Video(id={self.id}, status={self.status}, owner={self.owner.email})>"
