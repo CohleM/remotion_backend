@@ -15,7 +15,7 @@ from subtitle_generator.transcript_modification import apply_styles
 import os
 import tempfile
 import asyncio
-
+import math
 
 from subtitle_generator.utils.video_modification import convert_mp4_to_mp3, convert_video_lowres, get_video_info
 
@@ -490,10 +490,10 @@ def create_render_job(
             "customStyleConfigs": video.current_style,
             "videoUrl": video.high_res_url,
             "videoInfo": {
-                "width": video.width,
-                "height": video.height,
-                "fps": video.fps,
-                "durationInFrames": video.duration * video.fps
+                "width": math.floor(video.width),
+                "height": math.floor(video.height),
+                "fps": math.floor(video.fps),
+                "durationInFrames": math.floor(video.duration * video.fps)
             },
             "captionPadding": 540,
         }
