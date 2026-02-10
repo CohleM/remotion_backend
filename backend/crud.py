@@ -2,6 +2,8 @@
 from sqlalchemy.orm import Session
 from backend import models, schemas
 from typing import Optional, List
+from backend.models import RenderJob
+from datetime import datetime
 
 # ============== User CRUD ==============
 
@@ -211,4 +213,47 @@ def update_video(db: Session, video_id: int, video_update: schemas.VideoUpdate) 
     
     db.commit()
     db.refresh(video)
-    return video 
+    return video
+
+
+
+##########################################################################################
+# Render Job
+def create_render_job(db: Session, job):
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def get_render_job(db: Session, job_id):
+    return db.query(RenderJob).filter(RenderJob.id == job_id).first()
+
+
+def update_job_progress(db, job_id, progress):
+    job = get_render_job(db, job_id)
+    job.progress = progress
+    db.commit()
+
+
+def mark_job_started(db, job_id):
+    job = get_render_job(db, job_id)
+    job.status = "rendering"
+    job.started_at = datetime.utcnow()
+    db.commit()
+
+
+def mark_job_completed(db, job_id, url):
+    job = get_render_job(db, job_id)
+    job.status = "completed"
+    job.output_url = url
+    job.completed_at = datetime.utcnow()
+    job.progress = 1
+    db.commit()
+
+
+def mark_job_failed(db, job_id, error):
+    job = get_render_job(db, job_id)
+    job.status = "failed"
+    job.error = str(error)
+    db.commit()

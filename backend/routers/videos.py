@@ -462,3 +462,59 @@ async def change_styles(
                 status_code=500, 
                 detail=f"Style generation failed: {str(e)}"
             )
+
+
+
+##########################################################################################
+# Render Job
+
+@router.post("/render")
+def create_render_job(
+    video_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    import uuid
+    from backend.models import RenderJob
+
+    video = crud.get_video(db, video_id)
+    style = crud.get_style(db, video.style_id)
+
+    print('video and style', video, style)
+    job = RenderJob(
+        id=uuid.uuid4(),
+        user_id=current_user.id,
+        video_id=video_id,
+        input_props={
+            "transcript": style.styled_transcript,
+            "customStyleConfigs": video.current_style,
+            "videoUrl": video.high_res_url,
+            "videoInfo": {
+                "width": video.width,
+                "height": video.height,
+                "fps": video.fps,
+                "durationInFrames": video.duration * video.fps
+            },
+            "captionPadding": 540,
+        }
+    )
+
+    db.add(job)
+    db.commit()
+
+    return {"jobId": str(job.id)}
+
+
+@router.get("/render/{job_id}")
+def get_render_status(job_id: str, db: Session = Depends(get_db)):
+    job = crud.get_render_job(db, job_id)
+
+    if not job:
+        raise HTTPException(404)
+
+    return {
+        "status": job.status,
+        "progress": job.progress,
+        "videoUrl": job.output_url
+    }
+

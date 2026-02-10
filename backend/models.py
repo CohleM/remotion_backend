@@ -4,7 +4,12 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from backend.database import Base
 from datetime import datetime
-__all__ = ['Base', 'User', 'Video', 'Style']
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
+
+
+
+__all__ = ['Base', 'User', 'Video', 'Style', 'RenderJob']
 
 class User(Base):
     __tablename__ = "users"
@@ -98,3 +103,29 @@ class Style(Base):
     
     def __repr__(self):
         return f"<Style(name={self.name})>"
+
+
+
+
+
+### Render Job model
+class RenderJob(Base):
+    __tablename__ = "render_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    video_id = Column(Integer, ForeignKey("videos.id"), nullable=False)
+
+    status = Column(String, default="queued")
+    progress = Column(Float, default=0)
+
+    input_props = Column(JSON, nullable=False)
+
+    output_url = Column(Text)
+    error = Column(Text)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+
