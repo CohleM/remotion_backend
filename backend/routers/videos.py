@@ -522,13 +522,15 @@ def get_render_status(job_id: str, db: Session = Depends(get_db)):
     if job.status == "completed" and job.output_url:
         signed_url = s3_client.generate_presigned_url(
                         'get_object',
-                        Params={'Bucket': settings.R2_BUCKET_NAME, 'Key': job.output_url},
-                        ExpiresIn=1*3600
+                        Params={'Bucket': settings.R2_BUCKET_NAME, 'Key': job.output_url, 'ResponseContentDisposition': 'attachment; filename="video.mp4"'},
+                        ExpiresIn=1*3600,
+                        
                     )
 
     return {
         "status": job.status,
         "progress": job.progress,
-        "videoUrl": signed_url or ""
+        "videoUrl": signed_url or "",
+        "videoId" : job.video_id
     }
 
