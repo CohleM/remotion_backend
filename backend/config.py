@@ -25,8 +25,14 @@ class Settings(BaseSettings):
     R2_SECRET_ACCESS_KEY: str = ""
     R2_BUCKET_NAME: str = "videos"
     R2_PUBLIC_URL: str = ""  # Optional: for public access via custom domain
-    
-    
+
+    # Stripe payments    
+    STRIPE_API_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_PREMIUM: str = ""  # Price ID for premium plan
+    STRIPE_PRICE_ULTRA: str = ""    # Price ID for ultra plan
+
+
     class Config:
         env_file = ".env"
 

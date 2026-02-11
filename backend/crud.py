@@ -276,3 +276,17 @@ def update_caption_padding(db: Session, video_id: int, caption_padding: int):
         db.commit()
         db.refresh(video)
     return video
+
+
+def add_subscription_credits(db: Session, email: str, credits: int) -> Optional[models.User]:
+    """Add subscription credits to user by email (used by Stripe webhook)"""
+    user = get_user_by_email(db, email)
+    if user:
+        user.credits += credits
+        user.subscription = "Premium" if credits == 25 else "Ultra"
+        db.commit()
+        db.refresh(user)
+        print(f"Added {credits} credits to user {email}. New total: {user.credits}")
+    else:
+        print(f"User with email {email} not found for credit update")
+    return user
