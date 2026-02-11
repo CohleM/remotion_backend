@@ -78,6 +78,10 @@ class Video(Base):
 
     # render job id
     render_job_id = Column(UUID(as_uuid=True), nullable=True)
+
+    # these are for generating caption phase not the final render phase
+    progress = Column(Integer, default=0)        # 0-100
+    current_step = Column(String, nullable=True) 
     
     def __repr__(self):
         return f"<Video(id={self.id}, status={self.status}, owner={self.owner.email})>"

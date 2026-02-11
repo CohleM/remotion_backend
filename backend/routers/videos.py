@@ -189,152 +189,52 @@ async def process_video_async(
     
     return transcript, low_res_url, lowres_path, audio_path
 
+# backend/routers/videos.py
 
 @router.post("/generate")
 async def generate_captions(
     request: schemas.GenerateCaptionsRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: schemas.UserResponse = Depends(get_current_user)
 ):
-    """
-    Download video from R2, process it (transcribe + create low-res),
-    upload low-res to R2, and update database with results.
-    """
-    
-    print("=" * 60)
-    print("STARTING VIDEO GENERATION PIPELINE")
-    print("=" * 60)
-    
-    print(f"\n[REQUEST] User: {request.user_id}, Video: {request.video_id}")
-    print(f"[REQUEST] Filename: {request.video_filename}")
-    
-    # # Validate ownership
-    # if str(current_user.id) != request.user_id:
-    #     raise HTTPException(status_code=403, detail="User ID mismatch")
-    
-    # Create temp directory
-    temp_dir = os.path.join(tempfile.gettempdir(), f"{request.user_id}-{request.video_id}")
-    os.makedirs(temp_dir, exist_ok=True)
-    
-    local_file_path = os.path.join(temp_dir, request.video_filename)
-    print(f"\n[SETUP] Temp directory: {temp_dir}")
-    
-    try:
-        # Download from R2
-        print(f"\n[DOWNLOAD] Starting R2 download...")
-        file_key = get_video_key_from_url(request.video_url)
-        
-        response = s3_client.get_object(
-            Bucket=settings.R2_BUCKET_NAME,
-            Key=file_key
-        )
-        
-        # Write file (I/O bound - can be optimized further if needed)
-        with open(local_file_path, 'wb') as f:
-            for chunk in response['Body'].iter_chunks(chunk_size=8192):
-                f.write(chunk)
-        
-        original_size = os.path.getsize(local_file_path)
-        print(f"[DOWNLOAD] Complete: {original_size} bytes")
+    # Validate video exists and belongs to user
+    video = crud.get_video(db, int(request.video_id))
+    if not video or video.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Video not found")
 
-        width, height, duration_in_seconds, fps = get_video_info(local_file_path)
-        
-        # Process: transcribe + upload low-res concurrently
-        print(f"\n[PROCESSING] Starting transcription and low-res upload...")
-        transcript, low_res_url, lowres_path, audio_path = await process_video_async(
-            local_file_path,
-            request.user_id,
-            request.video_id
-        )
-        
-        # Update database with results
-        print(f"\n[DATABASE] Updating video record...")
-        
-        # Convert transcript dict to JSON string for storage
-        transcript_json = transcript  # Already a dict from model_dump()
-        
-        # clear temp files
-        for path in [local_file_path, lowres_path, audio_path]:
-            try:
-                os.remove(path)
-            except:
-                pass
-        
-        print("\n" + "=" * 60)
-        print("PIPELINE COMPLETE")
-        print("=" * 60)
-        
-        print('applying styles')
-        result = await apply_styles(transcript_json, request.style_config.get('id', 'default'))
+    # Mark as queued immediately
+    crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
+        status="processing",
+        progress=0,
+        current_step="queued"
+    ))
 
-        # Create style with result saved to the appropriate attribute
-        style_name = request.style_config.get('id', 'default')
-        print(f"\n[STYLE] Creating style '{style_name}' with result")
-        
-        # Prepare style data with result in the correct attribute
-        style_data = {
-            "name": style_name,
-            "description": f"Generated captions for video {request.video_id}",
-            "styled_transcript": result  # Dynamically set the attribute (e.g., matt: result)
-        }
+    # Fire and return
+    background_tasks.add_task(run_generation_pipeline, request)
 
-        
-        new_style = schemas.StyleCreate(**style_data)
-        style = crud.create_style(db, new_style, creator_id=current_user.id)
-        print(f"[STYLE] Created style with id: {style.id}")
-
-        all_styles_mapping = {
-            style_name : style.id # example "matt" : 5
-        }
-        
-        # Update video with the new style_id
-        final_video_update = schemas.VideoUpdate(
-            transcript=transcript_json,
-            low_res_url=low_res_url,
-            status="ready",
-            current_style=request.style_config,
-            width=width,
-            height=height,
-            fps=fps,
-            duration=duration_in_seconds,
-            style_id=style.id,
-            all_styles_mapping=all_styles_mapping
-        )
-        crud.update_video(db, int(request.video_id), final_video_update)
-        print(f"[STYLE] Updated video {request.video_id} with style_id: {style.id}")
-        
-        return {
-            "success": True,
-            "video_id": request.video_id,
-            "status": "ready",
-            "low_res_url": low_res_url,
-            "result": result,
-            "style_id": style.id,
-            "style_name": style_name,
-            "transcript_preview": str(transcript)[:200] + "..." if len(str(transcript)) > 200 else transcript
-        }
-        
-    except Exception as e:
-        print(f"\n[ERROR] Pipeline failed: {str(e)}")
-        # Add this to print full traceback
-        import traceback
-        print("\n" + "="*60)
-        print("FULL TRACEBACK:")
-        print("="*60)
-        traceback.print_exc()
-        print("="*60 + "\n")
-        
-        # Update status to error
-        try:
-            error_update = schemas.VideoUpdate(status="error")
-            crud.update_video(db, int(request.video_id), error_update)
-        except:
-            pass
-        
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+    return {
+        "video_id": request.video_id,
+        "status": "processing"
+    }
 
 
+@router.get("/generate/status/{video_id}")
+def get_generation_status(
+    video_id: int,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    video = crud.get_video(db, video_id)
+    if not video or video.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Video not found")
 
+    return {
+        "video_id": video.id,
+        "status": video.status,           # processing | ready | error
+        "progress": video.progress,        # 0-100
+        "current_step": video.current_step # "downloading" | "transcribing" etc.
+    }
 
 
 
@@ -534,3 +434,98 @@ def get_render_status(job_id: str, db: Session = Depends(get_db)):
         "videoId" : job.video_id
     }
 
+
+
+async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
+    from backend.database import SessionLocal
+    db = SessionLocal()
+
+    temp_dir = os.path.join(tempfile.gettempdir(), f"{request.user_id}-{request.video_id}")
+    os.makedirs(temp_dir, exist_ok=True)
+    local_file_path = os.path.join(temp_dir, request.video_filename)
+    lowres_path = None
+    audio_path = None
+
+    def update_progress(progress: int, step: str):
+        """Single helper — updates the video row directly"""
+        crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
+            progress=progress,
+            current_step=step
+        ))
+        print(f"[video {request.video_id}] {progress}% — {step}")
+
+    try:
+        # ── Stage 1: downloading ─────────────────────────────────────
+        update_progress(5, "downloading")
+
+        file_key = get_video_key_from_url(request.video_url)
+        response = s3_client.get_object(Bucket=settings.R2_BUCKET_NAME, Key=file_key)
+        with open(local_file_path, 'wb') as f:
+            for chunk in response['Body'].iter_chunks(chunk_size=8192):
+                f.write(chunk)
+
+        # ── Stage 2: converting to low-res ───────────────────────────
+        update_progress(20, "converting")
+        loop = asyncio.get_event_loop()
+        width, height, duration_in_seconds, fps = get_video_info(local_file_path)
+        lowres_path = await loop.run_in_executor(None, convert_video_lowres, local_file_path)
+
+        # ── Stage 3: extracting audio ────────────────────────────────
+        update_progress(40, "extracting_audio")
+        audio_path = await loop.run_in_executor(None, convert_mp4_to_mp3, lowres_path)
+
+        # ── Stage 4: transcribing + uploading lowres concurrently ────
+        update_progress(55, "transcribing")
+        transcript, low_res_url = await asyncio.gather(
+            asyncio.create_task(get_transcript_async(audio_path)),
+            asyncio.create_task(upload_lowres_to_r2(lowres_path, request.user_id, request.video_id))
+        )
+
+        # ── Stage 5: applying styles ─────────────────────────────────
+        update_progress(85, "applying_styles")
+        style_name = request.style_config.get('id', 'default')
+        result = await apply_styles(transcript, style_name)
+
+        style = crud.create_style(
+            db,
+            schemas.StyleCreate(
+                name=style_name,
+                description=f"Generated captions for video {request.video_id}",
+                styled_transcript=result
+            ),
+            creator_id=int(request.user_id)
+        )
+
+        # ── Stage 6: final update — all fields at once ───────────────
+        crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
+            transcript=transcript,
+            low_res_url=low_res_url,
+            status="ready",
+            progress=100,
+            current_step="completed",
+            current_style=request.style_config,
+            width=width,
+            height=height,
+            fps=fps,
+            duration=duration_in_seconds,
+            style_id=style.id,
+            all_styles_mapping={style_name: style.id}
+        ))
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        # Write error back to the video row
+        crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
+            status="error",
+            current_step=f"failed: {str(e)}"
+        ))
+
+    finally:
+        for path in [local_file_path, lowres_path, audio_path]:
+            if path:
+                try:
+                    os.remove(path)
+                except:
+                    pass
+        db.close()

@@ -64,6 +64,8 @@ class VideoUpdate(BaseModel):
     duration: Optional[float] = None
 
     render_job_id: Optional[UUID] = None  # ✅ Changed from str to UUID
+    progress: Optional[int] = None
+    current_step: Optional[str] = None
 
 class VideoCreate(BaseModel):
     name: Optional[str] = None
@@ -102,6 +104,9 @@ class VideoResponse(BaseModel):
 
     render_job_id: Optional[UUID] = None  # ✅ Changed from str to UUID
 
+    progress: Optional[int] = 0
+    current_step: Optional[str] = None
+    
     class Config:
         from_attributes = True
 
