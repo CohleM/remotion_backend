@@ -103,3 +103,26 @@ def delete_style(
     if success:
         return {"message": "Style deleted successfully"}
     raise HTTPException(status_code=500, detail="Failed to delete style")
+
+
+
+@router.post("/{style_id}/transcript", response_model=schemas.StyleResponse)
+def update_style_transcript(
+    style_id: int,
+    transcript_update: schemas.TranscriptUpdate,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    """
+    Update only the styled_transcript for a style (auto-save endpoint)
+    """
+    style = crud.get_style(db, style_id)
+    if not style:
+        raise HTTPException(status_code=404, detail="Style not found")
+    
+    # Only allow update if user created this style or it's not a default
+    if style.creator_id != current_user.id and style.is_default == 1:
+        raise HTTPException(status_code=403, detail="Not authorized to update this style")
+    
+    updated_style = crud.update_style_transcript(db, style_id, transcript_update.styled_transcript)
+    return updated_style

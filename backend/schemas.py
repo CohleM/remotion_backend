@@ -106,7 +106,7 @@ class VideoResponse(BaseModel):
 
     progress: Optional[int] = 0
     current_step: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -176,3 +176,7 @@ class ChangeStyleRequest(BaseModel):
     video_id: str
     style_config: Dict[str, Any]
 
+
+# update the transcript
+class TranscriptUpdate(BaseModel):
+    styled_transcript: List[Any]

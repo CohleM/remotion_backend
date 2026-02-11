@@ -257,3 +257,13 @@ def mark_job_failed(db, job_id, error):
     job.status = "failed"
     job.error = str(error)
     db.commit()
+
+
+def update_style_transcript(db: Session, style_id: int, styled_transcript: list):
+    style = db.query(models.Style).filter(models.Style.id == style_id).first()
+    if style:
+        style.styled_transcript = styled_transcript
+        style.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(style)
+    return style
