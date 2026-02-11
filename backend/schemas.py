@@ -67,6 +67,8 @@ class VideoUpdate(BaseModel):
     progress: Optional[int] = None
     current_step: Optional[str] = None
 
+    caption_padding: Optional[int] = None
+
 class VideoCreate(BaseModel):
     name: Optional[str] = None
     # No longer need to pass URLs - they come from upload
@@ -106,6 +108,8 @@ class VideoResponse(BaseModel):
 
     progress: Optional[int] = 0
     current_step: Optional[str] = None
+
+    caption_padding: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -180,3 +184,6 @@ class ChangeStyleRequest(BaseModel):
 # update the transcript
 class TranscriptUpdate(BaseModel):
     styled_transcript: List[Any]
+
+class CaptionPaddingUpdate(BaseModel):
+    caption_padding: int

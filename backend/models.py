@@ -61,7 +61,7 @@ class Video(Base):
     # Current active style configuration (JSON)
     current_style = Column(JSON, default=dict)
     all_styles_mapping = Column(JSON, default=dict)
-    
+    caption_padding = Column(Integer, nullable=True)
     # Foreign keys
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     style_id = Column(Integer, ForeignKey("styles.id"), nullable=True)

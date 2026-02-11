@@ -496,6 +496,8 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
             creator_id=int(request.user_id)
         )
 
+        caption_padding = height - (1/3)*height
+
         # ── Stage 6: final update — all fields at once ───────────────
         crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
             transcript=transcript,
@@ -509,7 +511,9 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
             fps=fps,
             duration=duration_in_seconds,
             style_id=style.id,
-            all_styles_mapping={style_name: style.id}
+            all_styles_mapping={style_name: style.id},
+            caption_padding=caption_padding
+
         ))
 
     except Exception as e:
@@ -529,3 +533,25 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
                 except:
                     pass
         db.close()
+
+
+@router.post("/{video_id}/caption-padding")
+def update_caption_padding(
+    video_id: int,
+    padding_update: schemas.CaptionPaddingUpdate,
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    """
+    Update only the caption padding for a video (auto-save endpoint)
+    """
+    video = crud.get_video(db, video_id)
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # Only allow update if user owns this video
+    if video.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this video")
+    
+    updated_video = crud.update_caption_padding(db, video_id, padding_update.caption_padding)
+    return updated_video

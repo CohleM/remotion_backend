@@ -267,3 +267,12 @@ def update_style_transcript(db: Session, style_id: int, styled_transcript: list)
         db.commit()
         db.refresh(style)
     return style
+
+def update_caption_padding(db: Session, video_id: int, caption_padding: int):
+    video = db.query(models.Video).filter(models.Video.id == video_id).first()
+    if video:
+        video.caption_padding = caption_padding
+        video.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(video)
+    return video
