@@ -214,8 +214,7 @@
 #                 raise
 #             time.sleep(2 ** attempt)
 
-
-# async_llm_client.py (Updated for two-step process)
+# async_llm_client.py (Updated with post-processing)
 import asyncio
 import logging
 from typing import Optional, Type, Any, List, Tuple
@@ -224,6 +223,7 @@ import httpx
 import time
 import os
 from subtitle_generator.models import GroupDivision, SubtitleTimeline
+from subtitle_generator.utils.post_processor import GroupPostProcessor  # NEW
 
 logger = logging.getLogger(__name__)
 
@@ -328,30 +328,36 @@ class AsyncLLMClient:
         config: Any,
     ) -> List[Tuple[int, Any, Any]]:
         """
-        NEW: Two-step processing: first divide into groups, then format.
-        Returns list of (chunk_index, chunk, formatted_timeline).
+        Two-step processing: first divide into groups, then format.
+        Includes post-processing to enforce word limits.
         """
         logger.info(f"Starting TWO-STEP processing for {len(chunks)} chunks")
+        
+        # Initialize post-processor with config setting
+        post_processor = GroupPostProcessor(max_words_per_group=config.max_words_per_group)
         
         # Step 1: Divide all chunks into groups concurrently
         logger.info("Step 1: Dividing chunks into groups...")
         group_divisions = await self._step1_divide_groups(chunks, config)
         
-        print('##################################################################')
-        print('\n\ngroup divisions \n\n')
-        print(group_divisions)
-        print('##################################################################')
-
+        # NEW: Post-process divisions to enforce word limits
+        logger.info(f"Post-processing: Enforcing max {config.max_words_per_group} words per group...")
+        processed_divisions = post_processor.process_divisions(group_divisions)
+        
+        # Log changes
+        for i, (original, processed) in enumerate(zip(group_divisions, processed_divisions)):
+            orig_count = len(original.groups)
+            new_count = len(processed.groups)
+            if orig_count != new_count:
+                logger.info(
+                    f"[Chunk {i}] Post-processing split {orig_count} groups "
+                    f"into {new_count} groups"
+                )
+        
         # Step 2: Format all groups into final subtitle structure concurrently
         logger.info("Step 2: Formatting groups into subtitles...")
-        formatted_timelines = await self._step2_format_groups(chunks, group_divisions, config)
-         
-        print('##################################################################')
-        print('\n\n Formatted timelines \n\n')
-        print(formatted_timelines)
-        print('##################################################################')
-
-
+        formatted_timelines = await self._step2_format_groups(chunks, processed_divisions, config)
+        
         # Combine results
         results = []
         for i, chunk in enumerate(chunks):

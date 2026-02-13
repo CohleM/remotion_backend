@@ -32,6 +32,7 @@ class GenerationConfig:
     model: str = "gpt-5.1"
     max_concurrent: int = 30
     max_chunk: int = 59
+    max_words_per_group: int = 8  # NEW: Post-processing word limit
 
 class PromptRegistry:
     """Central registry for different subtitle formatting strategies."""
@@ -58,7 +59,8 @@ class PromptRegistry:
                 system_prompt=THREE_LINES,
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
-                max_words_regular=3
+                max_words_regular=3,
+                max_words_per_group=8
             ),
             "jack": GenerationConfig(
                 name="jack",
@@ -80,6 +82,33 @@ class PromptRegistry:
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3
+            ),
+             "caleb": GenerationConfig(
+                name="caleb",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+
+            ),
+             "kendrick": GenerationConfig(
+                name="kendrick",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+
+            ),
+             "lewis": GenerationConfig(
+                name="lewis",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+
             )
         }
         if style not in configs:
