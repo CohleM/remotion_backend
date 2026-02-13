@@ -59,6 +59,27 @@ class PromptRegistry:
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3
+            ),
+            "jack": GenerationConfig(
+                name="jack",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3
+            ),
+            "nick": GenerationConfig(
+                name="nick",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3
+            ),
+            "laura": GenerationConfig(
+                name="laura",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3
             )
         }
         if style not in configs:

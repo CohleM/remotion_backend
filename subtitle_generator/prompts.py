@@ -2,20 +2,34 @@ THREE_LINES_GROUP_DIVISION = """
 You are an expert at analyzing video transcripts and dividing them into logical groups for subtitle animation.
 
 ## YOUR TASK
-Divide the provided transcript into consecutive, verbatim groups of words.
+Divide the provided transcript into consecutive, verbatim groups of words that work well for animated subtitles.
+
+## GROUPING PRINCIPLES
+- Group by natural speech phrases and pauses
+- Keep related ideas together when possible
+- Break at punctuation marks when it improves readability
+- Prioritize viewer comprehension and reading rhythm
 
 ## RULES
 1. **VERBATIM ONLY**: Use EXACT words from the transcript. No paraphrasing, no additions, no omissions.
+
 2. **CONSECUTIVE**: Groups must cover the transcript sequentially without gaps or overlaps.
+
 3. **GROUP SIZE**: 
-   - Minimum 1 word per group
-   - Maximum 8 words per group (aim for 3-6 words ideally)
+   - Minimum: 1 word per group
+   - Maximum: 8 words per group (never exceed this)
+   - Ideal: 3-6 words per group
+   - Never exceed 8 words, even if it means breaking coherent phrases mid-sentence
+
+4. **PRESERVE FORMATTING**: Keep original punctuation, capitalization, and spelling exactly as written
 
 ## STRICT REQUIREMENTS
 ✓ Every word from the transcript must appear exactly once
-✓ Words must be in original order
-✓ Preserve original punctuation and capitalization
-✓ Do not combine words from different sentences unnaturally
+✓ Words must be in their original order
+✓ No word can be skipped or repeated
+✓ Maintain all punctuation and capitalization
+✓ Strictly maintain that word limit 
+
 """
 
 
@@ -60,53 +74,23 @@ THREE_LINES = f"""
 You are an expert animation and subtitle designer specializing in creating dynamic, engaging subtitle animations for short-form video content (TikTok, Reels, YouTube Shorts, etc.).
 
 ## YOUR TASK
-Analyze the provided video transcript and intelligently group words into subtitle sequences that:
-
-- Emphasize key words through strategic line breaks
-- Create visual rhythm and engagement
+Analyze the provided video transcript which I have already divided into groups and nwo you need to intelligently divide those into subtitle sequences that:
+- Emphasize key word through strategic line breaks
 - Use exact words from transcript (no modifications)
 
 **Structure:**
 - Must have at maximum THREE lines
-- ONE line must contain the emphasis word(s)
+- Find the emphasis word in the group
 - The emphasis word should be isolated on its own line when possible
 
-**Examples:**
-```
-Example 1:
-Line 1 (normal): "The secret"
-Line 2 (bold): "ingredient"
-Line 3 (normal): "to make"
-```
-```
-Example 2:
-Line 1 (bold): "Ultimate"
-Line 2 (normal): "survival skills"
-Line 3 (normal): "is essential"
-```
-
-Example 3:
-Line 1 (normal): "You're never"
-Line 2 (normal): "going to"
-Line 3: (bold): "win"
-
-
-
-## GROUPING RULES
-
-**Word Limits:**
-- Maximum 6 words for special group 
-- Minimum 1 word per group
-- All words must be consecutive from the transcript
 
 ## LINE BREAK STRATEGY
 
 **For Special Groups (3 lines):**
-1. Identify the most important/emphasis words in the group
-2. Isolate that words on its own line
+1. Identify the most important/emphasis word in the group
+2. Isolate that word on its own line, emphasis word could be in any line number
 3. The emphasis line gets "bold" font
 4. The supporting line gets "normal" font
-
 
 
 ## FONT WEIGHT MAPPING
@@ -124,6 +108,9 @@ Line 3: (bold): "win"
 ✓ Keep words consecutive within each group (no skipping)
 ✓ Preserve original punctuation and capitalization
 ✓ Ensure all groups connect sequentially to cover the entire transcript
+✓ Ensure that you are operating on the same group given as an input, DONOT ever mix groups.
+✓ Ensure that emphasis word is only one word. 
+
 
 Now analyze the provided transcript and output the subtitle groups in the JSON format described above.
 """
