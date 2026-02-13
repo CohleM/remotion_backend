@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
-
+from botocore.exceptions import ReadTimeoutError
 from backend import crud, schemas
 from backend.database import get_db
 from backend.routers.auth import get_current_user
@@ -458,11 +458,15 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
         # ── Stage 1: downloading ─────────────────────────────────────
         update_progress(5, "downloading")
 
+        # file_key = get_video_key_from_url(request.video_url)
+        # response = s3_client.get_object(Bucket=settings.R2_BUCKET_NAME, Key=file_key)
+        # with open(local_file_path, 'wb') as f:
+        #     for chunk in response['Body'].iter_chunks(chunk_size=8192):
+        #         f.write(chunk)
+
+        update_progress(5, "downloading")
         file_key = get_video_key_from_url(request.video_url)
-        response = s3_client.get_object(Bucket=settings.R2_BUCKET_NAME, Key=file_key)
-        with open(local_file_path, 'wb') as f:
-            for chunk in response['Body'].iter_chunks(chunk_size=8192):
-                f.write(chunk)
+        await download_video_from_r2(file_key, local_file_path, int(request.video_id), db)
 
         # ── Stage 2: converting to low-res ───────────────────────────
         update_progress(20, "converting")
@@ -555,3 +559,65 @@ def update_caption_padding(
     
     updated_video = crud.update_caption_padding(db, video_id, padding_update.caption_padding)
     return updated_video
+
+
+
+
+# Enhanced download function
+async def download_video_from_r2(
+    file_key: str, 
+    local_path: str, 
+    video_id: int,
+    db,
+    max_retries: int = 3
+):
+    """
+    Download video from R2 with:
+    - Retry logic
+    - Progress updates
+    - Larger chunk size
+    - Timeout handling
+    """
+    loop = asyncio.get_event_loop()
+    
+    for attempt in range(max_retries):
+        try:
+            def _download():
+                response = s3_client.get_object(
+                    Bucket=settings.R2_BUCKET_NAME,
+                    Key=file_key
+                )
+                
+                file_size = response.get('ContentLength', 0)
+                downloaded = 0
+                
+                with open(local_path, 'wb') as f:
+                    for chunk in response['Body'].iter_chunks(chunk_size=131072):  # 128KB chunks
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        
+                        # Update every 10% of download
+                        if file_size > 0:
+                            progress = int((downloaded / file_size) * 15)
+                            if downloaded % (file_size // 10) < 131072:
+                                crud.update_video(db, video_id, schemas.VideoUpdate(
+                                    progress=5 + progress,
+                                    current_step=f"downloading"
+                                ))
+            
+            await loop.run_in_executor(None, _download)
+            return  # Success
+            
+        except ReadTimeoutError as e:
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 5
+                print(f"Download timeout, retry {attempt + 2}/{max_retries} in {wait_time}s...")
+                crud.update_video(db, video_id, schemas.VideoUpdate(
+                    current_step=f"download retry {attempt + 2}/{max_retries}"
+                ))
+                await asyncio.sleep(wait_time)
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to download video after {max_retries} attempts"
+                )

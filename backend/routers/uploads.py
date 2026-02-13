@@ -11,17 +11,34 @@ from backend import crud, schemas
 from backend.database import get_db
 from backend.routers.auth import get_current_user
 from backend.config import settings
+from botocore.config import Config
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
+
+
 # Initialize R2 client
+# s3_client = boto3.client(
+#     service_name="s3",
+#     endpoint_url=settings.R2_ENDPOINT_URL,
+#     aws_access_key_id=settings.R2_ACCESS_KEY_ID,
+#     aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
+#     region_name="auto"
+# )
+
 s3_client = boto3.client(
-    service_name="s3",
+    service_name='s3',
     endpoint_url=settings.R2_ENDPOINT_URL,
     aws_access_key_id=settings.R2_ACCESS_KEY_ID,
     aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
+    config=Config(
+        read_timeout=900,
+        connect_timeout=60,
+        retries={'max_attempts': 3, 'mode': 'adaptive'}
+    ),
     region_name="auto"
 )
+
 
 ALLOWED_TYPES = {
     'video/mp4', 'video/webm', 'video/quicktime', 'video/mov',
