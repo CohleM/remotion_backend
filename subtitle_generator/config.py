@@ -109,6 +109,15 @@ class PromptRegistry:
                 max_words_regular=3,
                 max_words_per_group=8
 
+            ),
+             "doug": GenerationConfig(
+                name="doug",
+                system_prompt=THREE_LINES,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+
             )
         }
         if style not in configs:

@@ -285,6 +285,8 @@ class AsyncLLMClient:
             
             start_time = time.time()
             logger.info(f"[Chunk {chunk_id}] Starting API call...")
+
+            print(messages)
             
             for attempt in range(self.max_retries):
                 try:
@@ -423,7 +425,8 @@ Divide this transcript into consecutive verbatim groups following the rules prov
 {groups_text}
 
 Format these groups into the subtitle structure with proper line breaks and font types."""
-            
+            # print(config.system_prompt)
+
             task = asyncio.create_task(
                 self.generate(
                     system_prompt=config.system_prompt,

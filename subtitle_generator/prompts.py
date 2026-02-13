@@ -88,6 +88,11 @@ Analyze the provided video transcript which I have already divided into groups a
 - The emphasis word should be isolated on its own line when possible
 
 
+## Line guidelines
+- Maximum 2-3 words per normal line
+- Maximum 1 word per emphasis line.
+- There's no limitation for emphasis line, it can be in Line 1, Line 2 or Line 3
+
 ## FONT WEIGHT MAPPING
 
 - **"bold"** → Lines containing emphasis/special words
