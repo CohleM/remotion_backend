@@ -456,7 +456,7 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
 
     try:
         # ── Stage 1: downloading ─────────────────────────────────────
-        update_progress(5, "downloading")
+        
 
         # file_key = get_video_key_from_url(request.video_url)
         # response = s3_client.get_object(Bucket=settings.R2_BUCKET_NAME, Key=file_key)

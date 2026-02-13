@@ -1,4 +1,4 @@
-# pipeline.py (Updated cleanup)
+# pipeline.py (Updated for two-step processing)
 import asyncio
 import logging
 from typing import List, Optional
@@ -18,10 +18,11 @@ class SubtitlePipeline:
         api_key: str,
         model: str = "gpt-4o",
         max_chunk_duration: float = 55.0,
-        max_concurrent: int = 3,  # Conservative default
+        max_concurrent: int = 3,
         timeout: float = 60.0,
         matcher: Optional[TimestampMatcher] = None,
-        io_handler: Optional[IOHandler] = None
+        io_handler: Optional[IOHandler] = None,
+        use_two_step: bool = True  # NEW: Toggle between one-step and two-step
     ):
         self.chunker = TranscriptChunker(max_duration=max_chunk_duration)
         self.llm_client = AsyncLLMClient(
@@ -34,6 +35,7 @@ class SubtitlePipeline:
         self.io = io_handler or IOHandler()
         self.merger = TimelineMerger()
         self.model = model
+        self.use_two_step = use_two_step  # NEW
     
     async def process_chunk(self, chunk, timeline):
         """Process single chunk."""
@@ -48,23 +50,24 @@ class SubtitlePipeline:
     async def run(
         self,
         raw_data: dict,
-        # output_path: str,
         config: GenerationConfig,
         transcript_override: Optional[str] = None
     ) -> List[dict]:
         """Run with proper resource management."""
         try:
             # Load and chunk
-            # raw_data = self.io.load_pickle(pickle_path)
             chunks = self.chunker.chunk(raw_data)
             
             if not chunks:
                 raise ValueError("No chunks generated")
             
-            logger.info(f"Processing {len(chunks)} chunks...")
+            logger.info(f"Processing {len(chunks)} chunks using {'TWO-STEP' if self.use_two_step else 'SINGLE-STEP'} mode...")
             
-            # Generate timelines
-            chunk_results = await self.llm_client.process_chunks(chunks, config)
+            # Choose processing method
+            if self.use_two_step:
+                chunk_results = await self.llm_client.process_chunks_two_step(chunks, config)
+            else:
+                chunk_results = await self.llm_client.process_chunks(chunks, config)
             
             # Process timestamps
             processed_chunks = []
@@ -78,7 +81,6 @@ class SubtitlePipeline:
             if not self.merger.validate_continuity(final_data):
                 logger.warning("Timeline continuity issues detected")
             
-            # self.io.save_json(final_data, output_path)
             return final_data
             
         finally:

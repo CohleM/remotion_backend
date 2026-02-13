@@ -50,3 +50,11 @@ class ProcessedLine(SubtitleLine):
 class ProcessedGroup(SubtitleGroup):
     lines: List[ProcessedLine]
     id: str = ""
+
+
+# NEW: Model for group division step
+class GroupDivision(BaseModel):
+    """First step: Divide transcript into verbatim groups"""
+    groups: List[str] = Field(
+        description="List of verbatim text groups from the transcript. Each group must contain exact consecutive words from the transcript."
+    )
