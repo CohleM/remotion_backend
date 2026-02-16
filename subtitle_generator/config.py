@@ -5,7 +5,7 @@ from typing import Optional, Type, Any
 from subtitle_generator.models import SubtitleTimeline,GroupDivision
 from subtitle_generator.prompts import (
     THREE_LINES, TWO_LINES, 
-    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR
+    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR, COMBO
 )
 # @dataclass
 # class GenerationConfig:
@@ -134,6 +134,22 @@ class PromptRegistry:
                 max_words_special=7,
                 max_words_regular=3,
                 max_words_per_group=9
+            ),
+             "Combo": GenerationConfig(
+                name="Combo",
+                system_prompt=COMBO,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+            ),
+             "Combo1": GenerationConfig(
+                name="Combo1",
+                system_prompt=COMBO,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
             )
         }
         if style not in configs:
