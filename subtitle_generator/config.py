@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Optional, Type, Any
 from subtitle_generator.models import SubtitleTimeline,GroupDivision
 from subtitle_generator.prompts import (
-    THREE_LINES, TWO_LINES, 
-    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR, COMBO
+    NORMAL_AND_BOLD, THREE_LINES, TWO_LINES, 
+    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR, COMBO,NORMAL_AND_ITALIC
 )
 # @dataclass
 # class GenerationConfig:
@@ -101,9 +101,17 @@ class PromptRegistry:
                 max_words_per_group=8
 
             ),
-             "lewis": GenerationConfig(
-                name="lewis",
-                system_prompt=THREE_LINES,
+             "Glow": GenerationConfig(
+                name="Glow",
+                system_prompt=NORMAL_AND_BOLD,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+            ),
+             "GlowI": GenerationConfig(
+                name="Glow Italic",
+                system_prompt=NORMAL_AND_ITALIC, ## uses the same prompt as normal and italic
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3,
@@ -127,14 +135,6 @@ class PromptRegistry:
                 max_words_regular=3,
                 max_words_per_group=9
             ),
-             "FaB1": GenerationConfig(
-                name="Fade and Blur1",
-                system_prompt=FADE_AND_BLUR,
-                group_division_prompt=Fade_AND_BLUR_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=9
-            ),
              "Combo": GenerationConfig(
                 name="Combo",
                 system_prompt=COMBO,
@@ -143,9 +143,18 @@ class PromptRegistry:
                 max_words_regular=3,
                 max_words_per_group=8
             ),
-             "Combo1": GenerationConfig(
-                name="Combo1",
-                system_prompt=COMBO,
+             "NaI": GenerationConfig(
+                name="Normal and Italic",
+                system_prompt=NORMAL_AND_ITALIC,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+            ),
+
+             "NaB": GenerationConfig(
+                name="Normal and Bold",
+                system_prompt=NORMAL_AND_BOLD,
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3,
