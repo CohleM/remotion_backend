@@ -5,7 +5,7 @@ from typing import Optional, Type, Any
 from subtitle_generator.models import SubtitleTimeline,GroupDivision
 from subtitle_generator.prompts import (
     THREE_LINES, TWO_LINES, 
-    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION
+    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR
 )
 # @dataclass
 # class GenerationConfig:
@@ -110,14 +110,30 @@ class PromptRegistry:
                 max_words_per_group=8
 
             ),
-             "doug": GenerationConfig(
-                name="doug",
+             "GB": GenerationConfig(
+                name="Gradient Base",
                 system_prompt=THREE_LINES,
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3,
                 max_words_per_group=8
 
+            ),
+             "FaB": GenerationConfig(
+                name="Fade and Blur",
+                system_prompt=FADE_AND_BLUR,
+                group_division_prompt=Fade_AND_BLUR_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=9
+            ),
+             "FaB1": GenerationConfig(
+                name="Fade and Blur1",
+                system_prompt=FADE_AND_BLUR,
+                group_division_prompt=Fade_AND_BLUR_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=9
             )
         }
         if style not in configs:

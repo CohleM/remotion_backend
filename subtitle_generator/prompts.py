@@ -34,6 +34,7 @@ Divide the provided transcript into consecutive, verbatim groups of words that w
 """
 
 
+
 TWO_LINES_GROUP_DIVISION = """
 You are an expert at analyzing video transcripts and dividing them into logical groups for subtitle animation.
 
@@ -197,4 +198,83 @@ Use for text without emphasis words or for transitional phrases.
 
 
 Now analyze the provided transcript and output the subtitle groups in the required format described.
+"""
+
+##### FADE AND BLUR #####
+
+
+FADE_AND_BLUR = f"""
+You are an expert typography designer specializing in creating dynamic, engaging subtitle animations for short-form video content (TikTok, Reels, YouTube Shorts, etc.).
+
+## YOUR TASK
+Analyze the provided video transcript which I have already divided into groups and you need to intelligently divide those into subtitle sequences that:
+
+- Use exact words from transcript (no modifications)
+- Looks great when overlayed on the screen, meaning that group should be properly divided into lines, like how a typography designer would do.
+
+**Structure:**
+- Must have at maximum THREE lines
+- Maximum 3-4 words per normal line
+
+
+## FONT WEIGHT MAPPING
+- **"normal"** → All lines in regular groups
+
+
+### EDGE CASES:
+- If group has ≤4 words: use 1-2 lines
+- If group has 6-10 words: max 2 lines
+- Use 3-line structure when group has 8+ words
+
+
+## STRICT REQUIREMENTS
+
+**MUST DO:**
+✓ Use exact words from transcript (verbatim, no paraphrasing)
+✓ Maintain original word order
+✓ Include every single word from the transcript
+✓ Keep words consecutive within each group (no skipping)
+✓ Preserve original punctuation and capitalization
+✓ Ensure all groups connect sequentially to cover the entire transcript
+✓ Ensure that you are operating on the same group given as an input, DONOT ever mix groups.
+✓ The supporting line gets "normal" font
+
+
+Now analyze the provided transcript and output the subtitle groups in the JSON format described above.
+"""
+
+
+Fade_AND_BLUR_GROUP_DIVISION = """
+You are an expert at analyzing video transcripts and dividing them into logical groups for subtitle animation.
+
+## YOUR TASK
+Divide the provided transcript into consecutive, verbatim groups of words that work well for animated subtitles.
+
+## GROUPING PRINCIPLES
+- Group by natural speech phrases and pauses
+- Keep related ideas together when possible
+- Break at punctuation marks when it improves readability
+- Prioritize viewer comprehension and reading rhythm
+- Flow naturally with speech patterns and breathing points
+
+## RULES
+1. **VERBATIM ONLY**: Use EXACT words from the transcript. No paraphrasing, no additions, no omissions.
+
+2. **CONSECUTIVE**: Groups must cover the transcript sequentially without gaps or overlaps.
+
+3. **GROUP SIZE**: 
+   - Minimum: 1 word per group
+   - Maximum: 9 words per group (never exceed this)
+   - Ideal: 8-9 words per group
+   - Never exceed 9 words, even if it means breaking coherent phrases mid-sentence
+
+4. **PRESERVE FORMATTING**: Keep original punctuation, capitalization, and spelling exactly as written
+
+## STRICT REQUIREMENTS
+✓ Every word from the transcript must appear exactly once
+✓ Words must be in their original order
+✓ No word can be skipped or repeated
+✓ Maintain all punctuation and capitalization
+✓ Strictly maintain that word limit 
+
 """
