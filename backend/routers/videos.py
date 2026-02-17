@@ -395,6 +395,7 @@ def create_render_job(
                 "durationInFrames": math.floor(video.duration * video.fps)
             },
             "captionPadding": video.caption_padding,
+            "style" : video.current_style['id']
         }
     )
 
