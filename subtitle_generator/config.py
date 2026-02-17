@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Type, Any
 from subtitle_generator.models import SubtitleTimeline,GroupDivision
 from subtitle_generator.prompts import (
-    NORMAL_AND_BOLD, THREE_LINES, TWO_LINES, 
+    GRADIENT_BASE_ITALIC, NORMAL_AND_BOLD, THREE_LINES, TWO_LINES, GRADIENT_BASE,
     THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR, COMBO,NORMAL_AND_ITALIC
 )
 # @dataclass
@@ -120,7 +120,16 @@ class PromptRegistry:
             ),
              "GB": GenerationConfig(
                 name="Gradient Base",
-                system_prompt=THREE_LINES,
+                system_prompt=GRADIENT_BASE,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+
+            ),
+             "GBI": GenerationConfig(
+                name="Gradient Base Italic",
+                system_prompt=GRADIENT_BASE_ITALIC,
                 group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
                 max_words_special=7,
                 max_words_regular=3,
@@ -159,7 +168,15 @@ class PromptRegistry:
                 max_words_special=7,
                 max_words_regular=3,
                 max_words_per_group=8
-            )
+            ),
+             "EW": GenerationConfig(
+                name="Equal Width",
+                system_prompt=COMBO,
+                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                max_words_special=7,
+                max_words_regular=3,
+                max_words_per_group=8
+            ),
         }
         if style not in configs:
             raise ValueError(f"Unknown style: {style}. Choose from {list(configs.keys())}")
