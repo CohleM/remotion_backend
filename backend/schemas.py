@@ -128,6 +128,7 @@ class UserResponse(UserBase):
     id: int
     credits: int
     created_at: datetime
+    subscription: str
     
     class Config:
         from_attributes = True

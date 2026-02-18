@@ -22,6 +22,17 @@ def get_users(
     users = db.query(crud.models.User).offset(skip).limit(limit).all()
     return users
 
+@router.get("/me", response_model=schemas.UserResponse)
+def get_current_user_info(
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    """
+    Get current authenticated user's info (credits, subscription, etc.)
+    """
+    print('yooo')
+    return current_user
+    
 @router.get("/{user_id}", response_model=schemas.UserWithVideos)
 def get_user(
     user_id: int,
@@ -40,3 +51,4 @@ def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     return schemas.UserWithVideos.model_validate(user)
+

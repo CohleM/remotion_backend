@@ -22,7 +22,7 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
         google_id=user.google_id,
         name=user.name,
         picture=user.picture,
-        credits=50  # Give initial free credits
+        
     )
     db.add(db_user)
     db.commit()

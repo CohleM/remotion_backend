@@ -19,7 +19,7 @@ class User(Base):
     google_id = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=True)
     picture = Column(String, nullable=True)  # Google profile picture
-    credits = Column(Integer, default=0)
+    credits = Column(Integer, default=2)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
