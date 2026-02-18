@@ -45,6 +45,7 @@ def get_video(
     """
     video = crud.get_video(db, video_id)
     if not video or video.owner_id != current_user.id:
+        # return {"message": "Video not found", "video_id": video_id}
         raise HTTPException(status_code=404, detail="Video not found")
     
     # Optionally refresh the URL if it's expired
@@ -88,7 +89,8 @@ def delete_video(
     """Delete video and associated R2 files"""
     video = crud.get_video(db, video_id)
     if not video or video.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Video not found")
+        return {"message": "Video not found", "video_id": video_id}
+        # raise HTTPException(status_code=404, detail="Video not found")
     
     # Delete from R2 if needed (optional - could keep files)
     # storage.delete_file(extract_key_from_url(video.original_url))
