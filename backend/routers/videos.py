@@ -21,7 +21,7 @@ from subtitle_generator.utils.video_modification import convert_mp4_to_mp3, conv
 
 router = APIRouter(prefix="/videos", tags=["videos"])
 
-@router.get("/", response_model=List[schemas.VideoResponse])
+@router.get("/", response_model=List[schemas.VideoResponseWithoutTranscript])
 def get_my_videos(
     skip: int = 0,
     limit: int = 100,

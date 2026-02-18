@@ -81,6 +81,38 @@ class VideoUploadResponse(BaseModel):
     name: str
     user_id: int
 
+class VideoResponseWithoutTranscript(BaseModel):
+    id: int
+    name: Optional[str]
+    # transcript: Optional[Dict[str, Any]]
+    original_url: Optional[str]
+    low_res_url: Optional[str]
+    high_res_url: Optional[str]
+    original_filename: Optional[str]
+    content_type: Optional[str]
+    file_size: Optional[int]
+    duration: Optional[float]
+    width: Optional[float]
+    height: Optional[float]
+    fps: Optional[float]
+    all_styles_mapping: Optional[Dict]
+
+    current_style: Dict[str, Any]
+    status: str
+    style_id: Optional[int]
+    owner_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None  # Made optional
+
+    render_job_id: Optional[UUID] = None  # ✅ Changed from str to UUID
+
+    progress: Optional[int] = 0
+    current_step: Optional[str] = None
+
+    caption_padding: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 class VideoResponse(BaseModel):
     id: int
     name: Optional[str]
