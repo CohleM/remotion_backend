@@ -2,11 +2,13 @@
 # --- config.py ---
 from dataclasses import dataclass
 from typing import Optional, Type, Any
-from subtitle_generator.models import SubtitleTimeline,GroupDivision
+from subtitle_generator.models import SubtitleTimeline,GroupDivision, GroupDivisionWithHighlights, FontConfig
 from subtitle_generator.prompts import (
-    GRADIENT_BASE_ITALIC, NORMAL_AND_BOLD, THREE_LINES, TWO_LINES, GRADIENT_BASE,
-    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION, Fade_AND_BLUR_GROUP_DIVISION, FADE_AND_BLUR, COMBO,NORMAL_AND_ITALIC
+    GRADIENT_BASE_ITALIC, NORMAL_AND_BOLD, THREE_LINES, TWO_LINES, GRADIENT_BASE, HYBRID_GROUP_DIVISION_NO_HIGHLIGHT,
+    THREE_LINES_GROUP_DIVISION, TWO_LINES_GROUP_DIVISION,  COMBO,NORMAL_AND_ITALIC
 )
+
+from subtitle_generator.prompts import HYBRID_GROUP_DIVISION
 # @dataclass
 # class GenerationConfig:
 #     """Configuration for subtitle generation strategies."""
@@ -19,20 +21,37 @@ from subtitle_generator.prompts import (
 #     max_concurrent: int = 30
 #     max_chunk: int = 59
 
+# Add to subtitle_generator/config.py prompts import and GenerationConfig
+
+# Add to the imports at top:
+from subtitle_generator.prompts import (
+    # ... existing imports ...
+    HYBRID_GROUP_DIVISION,  # NEW
+)
+from dataclasses import dataclass, field
+
+# Update GenerationConfig to include hybrid format:
 @dataclass
 class GenerationConfig:
     """Configuration for subtitle generation strategies."""
     name: str
-    system_prompt: str
-    group_division_prompt: Optional[str] = None  # NEW: Prompt for step 1
+    system_prompt:  Optional[str] = None
+    group_division_prompt: Optional[str] = None
     response_format: Optional[Type[Any]] = SubtitleTimeline
-    group_division_format: Optional[Type[Any]] = GroupDivision  # NEW: Format for step 1
+    group_division_format: Optional[Type[Any]] = GroupDivision  # For two-step
+    # NEW: For hybrid approach
+    hybrid_division_format: Optional[Type[Any]] = GroupDivisionWithHighlights  # NEW
     max_words_special: int = 6
     max_words_regular: int = 3
     model: str = "gpt-5.1"
     max_concurrent: int = 30
     max_chunk: int = 59
-    max_words_per_group: int = 8  # NEW: Post-processing word limit
+    max_words_per_group: int = 8
+    use_hybrid: bool = True
+    # NEW: Line division strategy
+    max_words_per_line: int = 3  # NEW: For rule-based line division
+    font_config: FontConfig = field(default_factory=FontConfig)
+    
 
 class PromptRegistry:
     """Central registry for different subtitle formatting strategies."""
@@ -41,143 +60,79 @@ class PromptRegistry:
     def get_config(cls, style: str) -> GenerationConfig:
         """Get configuration by style name."""
         configs = {
-            "basic": GenerationConfig(
-                name="two_line",
-                system_prompt=TWO_LINES,
-                max_words_special=5,
-                max_words_regular=3
-            ),
-            "matt": GenerationConfig(
-                name="matt", 
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=6,
-                max_words_regular=4
-            ),
-            "ThreeLines": GenerationConfig(
-                name="three_line_margin",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-            ),
-            "jack": GenerationConfig(
-                name="jack",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3
-            ),
-            "nick": GenerationConfig(
-                name="nick",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3
-            ),
-            "laura": GenerationConfig(
-                name="laura",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3
-            ),
-             "caleb": GenerationConfig(
-                name="caleb",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-
-            ),
-             "kendrick": GenerationConfig(
-                name="kendrick",
-                system_prompt=THREE_LINES,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-
-            ),
-             "Glow": GenerationConfig(
-                name="Glow",
-                system_prompt=NORMAL_AND_BOLD,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-            ),
-             "GlowI": GenerationConfig(
-                name="Glow Italic",
-                system_prompt=NORMAL_AND_ITALIC, ## uses the same prompt as normal and italic
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-
-            ),
-             "GB": GenerationConfig(
-                name="Gradient Base",
-                system_prompt=GRADIENT_BASE,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-
-            ),
-             "GBI": GenerationConfig(
-                name="Gradient Base Italic",
-                system_prompt=GRADIENT_BASE_ITALIC,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
-
-            ),
              "FaB": GenerationConfig(
                 name="Fade and Blur",
-                system_prompt=FADE_AND_BLUR,
-                group_division_prompt=Fade_AND_BLUR_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=9
+                # system_prompt=FADE_AND_BLUR,
+                group_division_prompt=HYBRID_GROUP_DIVISION_NO_HIGHLIGHT,  # NEW,
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=9,
+                font_config=FontConfig(bold=False, normal=True, italic=False) # when bold is false, it will use divide_no_highlight line divider
             ),
              "Combo": GenerationConfig(
                 name="Combo",
-                system_prompt=COMBO,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
+                group_division_prompt=HYBRID_GROUP_DIVISION, 
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=True, normal=True, italic=True)
             ),
              "NaI": GenerationConfig(
                 name="Normal and Italic",
-                system_prompt=NORMAL_AND_ITALIC,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=False, normal=True, italic=True)
             ),
-
              "NaB": GenerationConfig(
                 name="Normal and Bold",
-                system_prompt=NORMAL_AND_BOLD,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
-                max_words_special=7,
-                max_words_regular=3,
-                max_words_per_group=8
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=True, normal=True, italic=False)
             ),
              "EW": GenerationConfig(
                 name="Equal Width",
-                system_prompt=COMBO,
-                group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=True, normal=True, italic=True)
+            ),
+             "GB": GenerationConfig(
+                name="Gradient Base",
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=True, normal=True, italic=False)
+            ),
+             "Glow": GenerationConfig(
+                name="Glow",
+                # system_prompt=NORMAL_AND_BOLD,
+                # group_division_prompt=THREE_LINES_GROUP_DIVISION,  # NEW,
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
                 max_words_special=7,
                 max_words_regular=3,
-                max_words_per_group=8
+                max_words_per_group=8,
+                font_config=FontConfig(bold=True, normal=True, italic=False)
             ),
+             "GlowI": GenerationConfig(
+                name="Glow Italic",
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=False, normal=True, italic=True)
+            ),
+             "GBI": GenerationConfig(
+                name="Gradient Base Italic",
+                group_division_prompt=HYBRID_GROUP_DIVISION,  # NEW
+                hybrid_division_format=GroupDivisionWithHighlights,
+                max_words_per_group=8,
+                font_config=FontConfig(bold=False, normal=True, italic=True)
+            ),
+
+
         }
         if style not in configs:
             raise ValueError(f"Unknown style: {style}. Choose from {list(configs.keys())}")
         return configs[style]
+
+

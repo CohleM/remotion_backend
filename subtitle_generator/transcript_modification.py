@@ -8,6 +8,8 @@ logging.basicConfig(
     datefmt='%H:%M:%S'
 )
 
+# Update subtitle_generator/transcript_modification.py
+
 async def apply_styles(raw_data, style):
     """Async version - call with await"""
     api_key = os.getenv("OPENAI_API_KEY")
@@ -22,7 +24,8 @@ async def apply_styles(raw_data, style):
         api_key=api_key,
         model=config.model,
         max_chunk_duration=config.max_chunk,
-        max_concurrent=config.max_concurrent
+        max_concurrent=config.max_concurrent,
+        use_hybrid=config.use_hybrid  # Pass through
     )
     
     # Call pipeline.run directly (already async)
@@ -35,5 +38,4 @@ async def apply_styles(raw_data, style):
     print(f"   Total duration: {result[-1]['end']:.1f}s" if result else "   Empty result")
     
     return result
-
 

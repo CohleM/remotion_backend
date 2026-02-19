@@ -1,4 +1,4 @@
-# pipeline.py (Updated for two-step processing)
+# pipeline.py (Updated for hybrid processing)
 import asyncio
 import logging
 from typing import List, Optional
@@ -22,7 +22,8 @@ class SubtitlePipeline:
         timeout: float = 60.0,
         matcher: Optional[TimestampMatcher] = None,
         io_handler: Optional[IOHandler] = None,
-        use_two_step: bool = True  # NEW: Toggle between one-step and two-step
+        use_two_step: bool = True,
+        use_hybrid: bool = False  # NEW: Enable hybrid mode
     ):
         self.chunker = TranscriptChunker(max_duration=max_chunk_duration)
         self.llm_client = AsyncLLMClient(
@@ -35,7 +36,8 @@ class SubtitlePipeline:
         self.io = io_handler or IOHandler()
         self.merger = TimelineMerger()
         self.model = model
-        self.use_two_step = use_two_step  # NEW
+        self.use_two_step = use_two_step
+        self.use_hybrid = use_hybrid  # NEW
     
     async def process_chunk(self, chunk, timeline):
         """Process single chunk."""
@@ -61,14 +63,20 @@ class SubtitlePipeline:
             if not chunks:
                 raise ValueError("No chunks generated")
             
-            logger.info(f"Processing {len(chunks)} chunks using {'TWO-STEP' if self.use_two_step else 'SINGLE-STEP'} mode...")
-            
-            # Choose processing method
-            if self.use_two_step:
+            # Choose processing method (hybrid takes precedence)
+            if self.use_hybrid:
+                logger.info("Using HYBRID processing mode...")
+                chunk_results = await self.llm_client.process_chunks_hybrid(chunks, config)
+            elif self.use_two_step:
+                logger.info("Using TWO-STEP processing mode...")
                 chunk_results = await self.llm_client.process_chunks_two_step(chunks, config)
             else:
+                logger.info("Using SINGLE-STEP processing mode...")
                 chunk_results = await self.llm_client.process_chunks(chunks, config)
-            
+
+            print(' #########  ######### chunks #########  #########  #########  ') 
+            print(chunk_results) 
+            print(' #########  ######### chunks #########  #########  #########  ') 
             # Process timestamps
             processed_chunks = []
             for chunk_idx, chunk, timeline in chunk_results:
