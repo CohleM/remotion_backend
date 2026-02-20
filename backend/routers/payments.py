@@ -42,7 +42,7 @@ async def create_checkout_session(
             customer_email=current_user.email,
             metadata={
                 'user_id': str(current_user.id),
-                'plan': 'premium'
+                'plan': 'Premium'
             }
         )
         
@@ -60,7 +60,7 @@ async def create_checkout_session(
             customer_email=current_user.email,
             metadata={
                 'user_id': str(current_user.id),
-                'plan': 'ultra'
+                'plan': 'Ultra'
             }
         )
         
@@ -158,11 +158,11 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 def _add_credits_for_price(db: Session, customer_email: str, price_id: str):
     """Helper function to add credits based on price ID"""
     if price_id == settings.STRIPE_PRICE_PREMIUM:
-        print(f'Adding 25 credits to {customer_email}')
-        crud.add_subscription_credits(db, customer_email, 25)
+        print(f'Adding 100 credits to {customer_email}')
+        crud.add_subscription_credits(db, customer_email, 100, "Premium")
     elif price_id == settings.STRIPE_PRICE_ULTRA:
-        print(f'Adding 50 credits to {customer_email}')
-        crud.add_subscription_credits(db, customer_email, 50)
+        print(f'Adding 300 credits to {customer_email}')
+        crud.add_subscription_credits(db, customer_email, 300, "Ultra")
     else:
         print(f'Unknown price ID: {price_id}')
 
