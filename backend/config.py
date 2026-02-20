@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_PREMIUM: str = ""  # Price ID for premium plan
     STRIPE_PRICE_ULTRA: str = ""    # Price ID for ultra plan
+    OPENAI_API_KEY: str = ""
 
 
     class Config:
