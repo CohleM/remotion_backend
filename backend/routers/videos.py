@@ -503,7 +503,7 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
             creator_id=int(request.user_id)
         )
 
-        caption_padding = height - (1/3)*height
+        caption_padding = int(height - (1/3)*height)
 
         # ── Stage 6: final update — all fields at once ───────────────
         crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
