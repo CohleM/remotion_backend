@@ -9,3 +9,4 @@ services:
     volumes:
       - .:/code
     command: python main.py
+    restart: unless-stopped

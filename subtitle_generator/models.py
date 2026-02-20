@@ -142,4 +142,4 @@ class FontConfig(BaseModel):
         # Only use highlight separation if bold is True
         # This means NaB, Glow, Combo, GB use highlights
         # NaI, GlowI, GBI, FaB don't use highlight separation
-        return self.bold
+        return self.bold or self.italic
