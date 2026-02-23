@@ -209,7 +209,8 @@ async def generate_captions(
     crud.update_video(db, int(request.video_id), schemas.VideoUpdate(
         status="processing",
         progress=0,
-        current_step="queued"
+        current_step="queued",
+        video_language=request.video_language
     ))
 
     # Fire and return
@@ -484,7 +485,7 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
         # ── Stage 4: transcribing + uploading lowres concurrently ────
         update_progress(55, "transcribing")
         transcript, low_res_url = await asyncio.gather(
-            asyncio.create_task(get_transcript_async(audio_path)),
+            asyncio.create_task(get_transcript_async(audio_path, language=request.video_language)),
             asyncio.create_task(upload_lowres_to_r2(lowres_path, request.user_id, request.video_id))
         )
 
@@ -522,6 +523,17 @@ async def run_generation_pipeline(request: schemas.GenerateCaptionsRequest):
             caption_padding=caption_padding
 
         ))
+
+        # Calculate cost: 2 credits per minute, round up
+        video_minutes = duration_in_seconds / 60
+        credits_to_deduct = math.ceil(video_minutes * 2)
+        
+        # Get user and deduct credits
+        user = crud.get_user(db, int(request.user_id))
+        if user:
+            user.credits -= credits_to_deduct
+            db.commit()
+            print(f"[CREDITS] Deducted {credits_to_deduct} from user {request.user_id}, remaining: {user.credits}")
 
     except Exception as e:
         import traceback

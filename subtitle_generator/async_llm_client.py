@@ -392,7 +392,7 @@ Note: This is segment {chunk.chunk_index} of a longer video (starts at {chunk.st
         return results
 
 
-async def get_transcript_async(audio_path: str, retries: int = 3) -> dict:
+async def get_transcript_async(audio_path: str, retries: int = 3, language: str = "en") -> dict:
     """
     Async version of get_transcript using AsyncOpenAI client.
     """
@@ -406,7 +406,8 @@ async def get_transcript_async(audio_path: str, retries: int = 3) -> dict:
                     model="whisper-1",
                     file=f,
                     response_format="verbose_json",
-                    timestamp_granularities=["word"]
+                    timestamp_granularities=["word"],
+                    language=language
                 )
             return transcript.model_dump()
             

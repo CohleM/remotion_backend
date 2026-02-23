@@ -193,7 +193,7 @@ class TimestampMatcher:
         """
         phrase_words = [
             self.normalize_word(w) 
-            for w in re.findall(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?", phrase)
+            for w in re.findall(r"\w+(?:'\w+)?", phrase, re.UNICODE)
             if self.normalize_word(w)
         ]
         
@@ -315,7 +315,7 @@ class TimestampMatcher:
             logger.warning(f"Invalid indices for word extraction: {start_idx}-{end_idx}")
             return []
         
-        line_words = re.findall(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?", line_text)
+        line_words = re.findall(r"\w+(?:'\w+)?", line_text, re.UNICODE)
         
         word_details = []
         for i, word in enumerate(line_words):
@@ -349,7 +349,7 @@ class TimestampMatcher:
         """
         phrase_words = [
             self.normalize_word(w) 
-            for w in re.findall(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?", phrase)
+            for w in re.findall(r"\w+(?:'\w+)?", phrase, re.UNICODE)
             if self.normalize_word(w)
         ]
         
@@ -380,7 +380,7 @@ class TimestampMatcher:
         line_end: float
     ) -> List[dict]:
         """DEPRECATED: Use get_word_timestamps_sequential instead."""
-        line_words = re.findall(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?", line_text)
+        line_words = re.findall(r"\w+(?:'\w+)?", line_text, re.UNICODE)
         normalized_line_words = [self.normalize_word(w) for w in line_words]
         transcript_words = [self.normalize_word(w.word) for w in word_timestamps]
         

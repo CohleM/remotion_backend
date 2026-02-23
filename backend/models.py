@@ -82,6 +82,8 @@ class Video(Base):
     # these are for generating caption phase not the final render phase
     progress = Column(Integer, default=0)        # 0-100
     current_step = Column(String, nullable=True) 
+
+    language = Column(String, default='en')
     
     def __repr__(self):
         return f"<Video(id={self.id}, status={self.status}, owner={self.owner.email})>"

@@ -68,6 +68,7 @@ class VideoUpdate(BaseModel):
     current_step: Optional[str] = None
 
     caption_padding: Optional[int] = None
+    video_language: Optional[str] = None
 
 class VideoCreate(BaseModel):
     name: Optional[str] = None
@@ -208,6 +209,7 @@ class GenerateCaptionsRequest(BaseModel):
     video_url: str
     style_config: Dict[str, Any]  # Flexible to accept any style config structure
     video_filename: str
+    video_language: str
 
 class ChangeStyleRequest(BaseModel):
     video_id: str
