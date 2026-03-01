@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 
 
-__all__ = ['Base', 'User', 'Video', 'Style', 'RenderJob']
+__all__ = ['Base', 'User', 'Video', 'Style', 'RenderJob',  'Referrer', 'Referral']
 
 class User(Base):
     __tablename__ = "users"
@@ -26,7 +26,9 @@ class User(Base):
     subscription = Column(String, default="Free")
     # Relationships
     videos = relationship("Video", back_populates="owner", cascade="all, delete-orphan")
-    
+
+    referred_by_code = Column(String, nullable=True)   # stores "manish98" at signup
+    referrer_profile = relationship("Referrer", back_populates="user", uselist=False)
     def __repr__(self):
         return f"<User(email={self.email}, credits={self.credits})>"
 
@@ -137,4 +139,71 @@ class RenderJob(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
+
+
+
+
+## REFERRAL
+
+class Referrer(Base):
+    __tablename__ = "referrers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)  # one link per user
+    google_id = Column(String, unique=True, index=True, nullable=False)
+    code = Column(String, unique=True, index=True, nullable=False)  # e.g. "manish98"
+
+    clicks = Column(Integer, default=0)
+    signups = Column(Integer, default=0)
+    customers = Column(Integer, default=0)
+
+    # earnings in cents
+    total_earned_cents = Column(Integer, default=0)
+
+    # Payout / profile fields
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    paypal_email = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="referrer_profile")
+    referrals = relationship("Referral", back_populates="referrer")
+    payouts = relationship("Payout", back_populates="referrer")
+
+# New Payout model — add this:
+class Payout(Base):
+    __tablename__ = "payouts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    referrer_id = Column(Integer, ForeignKey("referrers.id"), nullable=False)
+    amount_cents = Column(Integer, nullable=False)
+    status = Column(String, default="pending")   # pending | paid | failed
+    note = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+
+    referrer = relationship("Referrer", back_populates="payouts")
+
+
+class Referral(Base):
+    __tablename__ = "referrals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    referrer_id = Column(Integer, ForeignKey("referrers.id"), nullable=False)
+    referred_user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)  # one referrer per user
+
+    converted = Column(Integer, default=0)  # 0 = signed up, 1 = paid
+    commission_cents = Column(Integer, default=0)  # commission earned from this referral
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    converted_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    referrer = relationship("Referrer", back_populates="referrals")
+    referred_user = relationship("User", foreign_keys=[referred_user_id])
+
 

@@ -4,6 +4,15 @@ from backend import models, schemas
 from typing import Optional, List
 from backend.models import RenderJob
 from datetime import datetime
+from backend.models import Referrer, Referral, Payout
+
+
+COMMISSION_RATE = 0.30
+PLAN_PRICES = {
+    "Premium": 1900,   # cents
+    "Ultra": 3900,     # cents
+}
+
 
 # ============== User CRUD ==============
 
@@ -290,3 +299,133 @@ def add_subscription_credits(db: Session, email: str, credits: int, subscription
     else:
         print(f"User with email {email} not found for credit update")
     return user
+
+
+
+
+# ============== Referrer CRUD ==============
+
+def get_referrer_by_user_id(db: Session, user_id: int) -> Optional[Referrer]:
+    return db.query(Referrer).filter(Referrer.user_id == user_id).first()
+
+def get_referrer_by_code(db: Session, code: str) -> Optional[Referrer]:
+    return db.query(Referrer).filter(Referrer.code == code).first()
+
+def create_referrer(db: Session, user_id: int, code: str) -> Referrer:
+    referrer = Referrer(user_id=user_id, code=code)
+    db.add(referrer)
+    db.commit()
+    db.refresh(referrer)
+    return referrer
+
+def increment_referrer_clicks(db: Session, code: str):
+    referrer = get_referrer_by_code(db, code)
+    if referrer:
+        referrer.clicks += 1
+        db.commit()
+
+def create_referral(db: Session, referrer_id: int, referred_user_id: int) -> Referral:
+    referral = Referral(referrer_id=referrer_id, referred_user_id=referred_user_id)
+    db.add(referral)
+    db.commit()
+    db.refresh(referral)
+    return referral
+
+def mark_referral_converted(db: Session, referred_user_id: int, plan: str):
+    """Called after first payment. Updates referral + referrer earnings."""
+    referral = db.query(Referral).filter(
+        Referral.referred_user_id == referred_user_id,
+        Referral.converted == 0
+    ).first()
+
+    if not referral:
+        return  # no referral or already converted
+
+    price_cents = PLAN_PRICES.get(plan, 0)
+    commission = int(price_cents * COMMISSION_RATE)
+
+    referral.converted = 1
+    referral.commission_cents = commission
+    referral.converted_at = datetime.utcnow()
+
+    # Update referrer totals
+    referrer = db.query(Referrer).filter(Referrer.id == referral.referrer_id).first()
+    if referrer:
+        referrer.customers += 1
+        referrer.total_earned_cents += commission
+
+    db.commit()
+
+
+
+### PAYOUTS
+
+def update_referrer_profile(db: Session, user_id: int, data: dict) -> Optional[Referrer]:
+    referrer = get_referrer_by_user_id(db, user_id)
+    if not referrer:
+        return None
+    for k, v in data.items():
+        if v is not None:
+            setattr(referrer, k, v)
+    db.commit()
+    db.refresh(referrer)
+    return referrer
+
+def get_referral_users(db: Session, referrer_id: int):
+    """Returns referral records joined with user emails."""
+    from backend.models import User
+    results = (
+        db.query(Referral, User)
+        .join(User, User.id == Referral.referred_user_id)
+        .filter(Referral.referrer_id == referrer_id)
+        .order_by(Referral.created_at.desc())
+        .all()
+    )
+    return results  # list of (Referral, User) tuples
+
+def get_payouts_for_referrer(db: Session, referrer_id: int):
+    return db.query(Payout).filter(Payout.referrer_id == referrer_id).order_by(Payout.created_at.desc()).all()
+
+def create_payout(db: Session, referrer_id: int, amount_cents: int, note: str = None) -> Payout:
+    """Admin use: create a payout record for a referrer."""
+    payout = Payout(referrer_id=referrer_id, amount_cents=amount_cents, note=note)
+    db.add(payout)
+    db.commit()
+    db.refresh(payout)
+    return payout
+
+def mark_payout_paid(db: Session, payout_id: int) -> Optional[Payout]:
+    from datetime import datetime
+    payout = db.query(Payout).filter(Payout.id == payout_id).first()
+    if payout:
+        payout.status = "paid"
+        payout.paid_at = datetime.utcnow()
+        db.commit()
+        db.refresh(payout)
+    return payout
+
+
+def get_referrer_by_google_id(db: Session, google_id: str) -> Optional[Referrer]:
+    return db.query(Referrer).filter(Referrer.google_id == google_id).first()
+def get_referrer_by_id(db: Session, referrer_id: int) -> Optional[Referrer]:
+    return db.query(Referrer).filter(Referrer.id == referrer_id).first()
+
+
+def update_referrer_profile_by_id(db: Session, referrer_id: int, data: dict) -> Optional[Referrer]:
+    referrer = get_referrer_by_id(db, referrer_id)
+    if not referrer:
+        return None
+    for k, v in data.items():
+        if v is not None:
+            setattr(referrer, k, v)
+    db.commit()
+    db.refresh(referrer)
+    return referrer
+
+    
+def create_referrer_with_google(db: Session, google_id: str, email: str, name: Optional[str], code: str) -> Referrer:
+    referrer = Referrer(google_id=google_id, email=email, name=name, code=code)
+    db.add(referrer)
+    db.commit()
+    db.refresh(referrer)
+    return referrer

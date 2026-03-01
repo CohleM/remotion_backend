@@ -156,13 +156,23 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 
 
 def _add_credits_for_price(db: Session, customer_email: str, price_id: str):
+    user = crud.get_user_by_email(db, customer_email)
     """Helper function to add credits based on price ID"""
     if price_id == settings.STRIPE_PRICE_PREMIUM:
         print(f'Adding 100 credits to {customer_email}')
         crud.add_subscription_credits(db, customer_email, 100, "Premium")
+
+        # Add referral commission
+        if user:
+            crud.mark_referral_converted(db, user.id, "Premium")
+
     elif price_id == settings.STRIPE_PRICE_ULTRA:
         print(f'Adding 300 credits to {customer_email}')
         crud.add_subscription_credits(db, customer_email, 300, "Ultra")
+
+        # Add referral commission
+        if user:
+            crud.mark_referral_converted(db, user.id, "Ultra")
     else:
         print(f'Unknown price ID: {price_id}')
 

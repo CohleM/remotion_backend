@@ -175,8 +175,12 @@ class UserWithVideos(UserResponse):
 
 # ============== Auth Schemas ==============
 
+# class GoogleAuthRequest(BaseModel):
+#     token: str  # Google ID token from frontend
+
 class GoogleAuthRequest(BaseModel):
-    token: str  # Google ID token from frontend
+    token: str
+    referral_code: Optional[str] = None  # ADD THIS to existing schema
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -222,3 +226,63 @@ class TranscriptUpdate(BaseModel):
 
 class CaptionPaddingUpdate(BaseModel):
     caption_padding: int
+
+
+# Add to schemas.py
+
+class ReferrerCreate(BaseModel):
+    code: str  # chosen by user, e.g. "manish98"
+
+# class ReferrerResponse(BaseModel):
+#     id: int
+#     code: str
+#     clicks: int
+#     signups: int
+#     customers: int
+#     total_earned_cents: int
+#     created_at: datetime
+
+#     class Config:
+#         from_attributes = True
+
+class ReferrerProfileUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    paypal_email: Optional[str] = None
+
+class ReferrerResponse(BaseModel):
+    id: int
+    code: str
+    clicks: int
+    signups: int
+    customers: int
+    total_earned_cents: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    paypal_email: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ReferralUserResponse(BaseModel):
+    id: int
+    masked_email: str
+    converted: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class PayoutResponse(BaseModel):
+    id: int
+    amount_cents: int
+    status: str
+    note: Optional[str] = None
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

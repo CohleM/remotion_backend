@@ -120,7 +120,23 @@ async def google_auth(
             google_id=google_user.sub
         )
         user = crud.create_user(db, user_create)
-    
+
+
+        # Handle referral on new signup
+        referral_code = auth_request.referral_code
+        if referral_code:
+            referrer = crud.get_referrer_by_code(db, referral_code)
+            if referrer and referrer.user_id != user.id:  # prevent self-referral
+                # Save code on user for payment tracking later
+                user.referred_by_code = referral_code
+                db.commit()
+
+                # Create referral record
+                crud.create_referral(db, referrer_id=referrer.id, referred_user_id=user.id)
+
+                # Increment signups count
+                referrer.signups += 1
+                db.commit() 
     # Create JWT token
     access_token = create_access_token(
         data={"sub": str(user.id)}
@@ -151,3 +167,60 @@ async def refresh_token(current_user: schemas.UserResponse = Depends(get_current
         data={"sub": str(current_user.id)}
     )
     return {"access_token": new_token, "token_type": "bearer"}
+
+
+
+import string
+import random
+import re
+
+def verify_affiliate_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            audience="affiliate",
+        )
+        return int(payload["sub"])
+    except (JWTError, KeyError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired affiliate token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+def generate_referral_code(db: Session, name: Optional[str], email: str) -> str:
+    """Auto-generate a unique code from name or email prefix."""
+    base = (name.split()[0] if name else email.split('@')[0])
+    base = re.sub(r'[^a-z0-9]', '', base.lower())[:12] or "affiliate"
+
+    code = base
+    while crud.get_referrer_by_code(db, code):
+        suffix = ''.join(random.choices(string.digits, k=3))
+        code = f"{base}{suffix}"
+    return code
+
+
+@router.post("/affiliate/google")
+async def affiliate_google_login(auth_request: schemas.GoogleAuthRequest, db: Session = Depends(get_db)):
+    google_user = verify_google_token(auth_request.token)
+
+    # Check if referrer already exists
+    referrer = crud.get_referrer_by_google_id(db, google_user.sub)
+
+    if not referrer:
+        # Create new referrer directly — no User needed
+        code = generate_referral_code(db, google_user.name, google_user.email)
+        referrer = crud.create_referrer_with_google(
+            db,
+            google_id=google_user.sub,
+            email=google_user.email,
+            name=google_user.name,
+            code=code
+        )
+
+    token = crud.create_affiliate_token(referrer.id)
+    return {"access_token": token, "token_type": "bearer"}

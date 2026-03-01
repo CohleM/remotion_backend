@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.database import engine, Base
-from backend.routers import auth, users, videos, styles, uploads, payments
+from backend.routers import auth, users, videos, styles, uploads, payments, referral
 from backend.config import settings
 
 # Create database tables
@@ -31,6 +31,8 @@ app.include_router(videos.router)
 app.include_router(styles.router)
 app.include_router(uploads.router)  # Uploads router handles the upload endpoint
 app.include_router(payments.router)  # Add payments router
+app.include_router(referral.router)  # Add referral router
+
 
 @app.get("/")
 def read_root():
