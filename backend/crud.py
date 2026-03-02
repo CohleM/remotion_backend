@@ -407,6 +407,7 @@ def mark_payout_paid(db: Session, payout_id: int) -> Optional[Payout]:
 
 def get_referrer_by_google_id(db: Session, google_id: str) -> Optional[Referrer]:
     return db.query(Referrer).filter(Referrer.google_id == google_id).first()
+    
 def get_referrer_by_id(db: Session, referrer_id: int) -> Optional[Referrer]:
     return db.query(Referrer).filter(Referrer.id == referrer_id).first()
 
@@ -422,9 +423,9 @@ def update_referrer_profile_by_id(db: Session, referrer_id: int, data: dict) -> 
     db.refresh(referrer)
     return referrer
 
-    
-def create_referrer_with_google(db: Session, google_id: str, email: str, name: Optional[str], code: str) -> Referrer:
-    referrer = Referrer(google_id=google_id, email=email, name=name, code=code)
+
+def create_referrer_with_google(db: Session, google_id: str,code: str) -> Referrer:
+    referrer = Referrer(google_id=google_id, code=code)
     db.add(referrer)
     db.commit()
     db.refresh(referrer)

@@ -28,7 +28,7 @@ class User(Base):
     videos = relationship("Video", back_populates="owner", cascade="all, delete-orphan")
 
     referred_by_code = Column(String, nullable=True)   # stores "manish98" at signup
-    referrer_profile = relationship("Referrer", back_populates="user", uselist=False)
+    # referrer_profile = relationship("Referrer", back_populates="user", uselist=False)
     def __repr__(self):
         return f"<User(email={self.email}, credits={self.credits})>"
 
@@ -149,8 +149,8 @@ class Referrer(Base):
     __tablename__ = "referrers"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)  # one link per user
-    google_id = Column(String, unique=True, index=True, nullable=False)
+    # user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)  # one link per user
+    google_id = Column(String, unique=True, index=True, nullable=True)
     code = Column(String, unique=True, index=True, nullable=False)  # e.g. "manish98"
 
     clicks = Column(Integer, default=0)
@@ -169,7 +169,7 @@ class Referrer(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="referrer_profile")
+
     referrals = relationship("Referral", back_populates="referrer")
     payouts = relationship("Payout", back_populates="referrer")
 

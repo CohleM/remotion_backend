@@ -126,7 +126,7 @@ async def google_auth(
         referral_code = auth_request.referral_code
         if referral_code:
             referrer = crud.get_referrer_by_code(db, referral_code)
-            if referrer and referrer.user_id != user.id:  # prevent self-referral
+            if referrer:  # prevent self-referral
                 # Save code on user for payment tracking later
                 user.referred_by_code = referral_code
                 db.commit()
@@ -183,8 +183,10 @@ def verify_affiliate_token(
             credentials.credentials,
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
-            audience="affiliate",
+            # audience="affiliate",
         )
+        # jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        print('verify affiliate token', int(payload['sub']))
         return int(payload["sub"])
     except (JWTError, KeyError, ValueError):
         raise HTTPException(
@@ -211,16 +213,21 @@ async def affiliate_google_login(auth_request: schemas.GoogleAuthRequest, db: Se
     # Check if referrer already exists
     referrer = crud.get_referrer_by_google_id(db, google_user.sub)
 
+
+    print('google user', google_user)
     if not referrer:
         # Create new referrer directly — no User needed
         code = generate_referral_code(db, google_user.name, google_user.email)
         referrer = crud.create_referrer_with_google(
             db,
             google_id=google_user.sub,
-            email=google_user.email,
-            name=google_user.name,
             code=code
         )
 
-    token = crud.create_affiliate_token(referrer.id)
-    return {"access_token": token, "token_type": "bearer"}
+    # token = crud.create_affiliate_token(referrer.id)
+    token = create_access_token(
+        data={"sub": str(referrer.id)}
+    )
+
+    print('token gg ', token)
+    return {"affiliate_access_token": token, "token_type": "bearer"}

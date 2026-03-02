@@ -39,6 +39,8 @@ async def create_referral_code(
     Replace the referrer's current code with a new one.
     The new code must be unique across all referrers.
     """
+
+    print('referrer id create ', referrer_id)
     import re
     code = payload.code.lower().strip()
 
@@ -53,6 +55,8 @@ async def create_referral_code(
     if existing and existing.id != referrer_id:
         raise HTTPException(status_code=400, detail="Code already taken. Please choose another.")
 
+
+    print('referrer id ', referrer_id)
     referrer = crud.get_referrer_by_id(db, referrer_id)
     if not referrer:
         raise HTTPException(status_code=404, detail="Referrer not found")
@@ -126,6 +130,8 @@ async def update_profile(
 ):
     """Update payout details: name, address, PayPal email."""
     referrer = crud.get_referrer_by_id(db, referrer_id)
+
+    print('test', referrer_id, referrer)
     if not referrer:
         raise HTTPException(status_code=404, detail="Referrer not found")
 
